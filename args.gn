@@ -3,7 +3,7 @@ is_debug = false
 target_cpu = "arm64"
 
 # Additional command-line args:
-target_os="linux"
+target_os="mac"
 target_cpu="arm64"
 v8_target_cpu="arm64"
 v8_use_external_startup_data=false
@@ -12,7 +12,7 @@ is_official_build=false
 is_component_build=false
 is_cfi=false
 is_asan=false
-is_clang=false
+is_clang=true
 use_custom_libcxx=false
 use_custom_libcxx_for_host=false
 use_sysroot=false
@@ -37,7 +37,6 @@ v8_enable_gdbjit=false
 v8_imminent_deprecation_warnings=false
 v8_scriptormodule_legacy_lifetime=true
 v8_enable_sandbox=false
-linux_use_bundled_binutils=false
 use_dummy_lastchange=true
 line_tables_only=true
 no_inline_line_tables=true
