@@ -46,6 +46,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           path: ${{ github.workspace }}/v8/include
+          name: include
 
   build-linux:
     name: linux
