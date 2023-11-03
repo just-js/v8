@@ -28,13 +28,24 @@ jobs:
           fetch v8
       - name: fetch beta branch
         run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cd $GITHUB_WORKSPACE/v8
           #git checkout "branch-heads/12.0"
           gclient sync
           mkdir -p out.gn/arm64.release/
       - name: build v8 static library
         run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cp $GITHUB_WORKSPACE/args.gn $GITHUB_WORKSPACE/v8/out.gn/arm64.release/args.gn
           cd $GITHUB_WORKSPACE/v8
           gn gen out.gn/arm64.release
           ninja v8_monolith -C out.gn/arm64.release/
+      - name: Upload static library
+        uses: actions/upload-artifact@v3
+        with:
+          path: $GITHUB_WORKSPACE/v8/out.gn/arm64.release/obj/libv8_monolith.a
+          name: libv8_monolith-${{ matrix.platform }}.a
+      - name: Upload headers
+        uses: actions/upload-artifact@v3
+        with:
+          path: $GITHUB_WORKSPACE/v8/include
