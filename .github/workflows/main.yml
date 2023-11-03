@@ -22,14 +22,22 @@ jobs:
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
-          mkdir $GITHUB_WORKSPACE/v8
-          cd $GITHUB_WORKSPACE/v8
-          echo "mac-arm64" > .cipd_client_platform
+          #mkdir $GITHUB_WORKSPACE/v8
+          #cd $GITHUB_WORKSPACE/v8
+          #echo "mac-arm64" > .cipd_client_platform
           fetch v8
-          #git checkout "branch-heads/12.0"
+      - name: fetch beta branch
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cd $GITHUB_WORKSPACE/v8
+          git checkout branch-heads/12.0
           gclient sync
           mkdir -p out.gn/arm64.release/
-          cp $GITHUB_WORKSPACE/args.gn $GITHUB_WORKSPACE/v8/out.gn/arm64.release/args.gn
+      - name: build v8 static library
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cp args.gn $GITHUB_WORKSPACE/v8/out.gn/arm64.release/args.gn
+          cd $GITHUB_WORKSPACE/v8
           gn gen out.gn/arm64.release
           ninja v8_monolith -C out.gn/arm64.release/
       - name: Upload static library
