@@ -7,7 +7,7 @@ defaults:
 
 jobs:
   build-mac:
-    if: ${{ false }}  # disable for now
+#    if: ${{ false }}  # disable for now
     name: mac
     runs-on: macos-12
     strategy:
@@ -50,7 +50,7 @@ jobs:
           name: include
 
   build-linux:
-    if: ${{ false }}  # disable for now
+#    if: ${{ false }}  # disable for now
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -88,7 +88,7 @@ jobs:
           name: libv8_monolith-linux-${{ matrix.platform }}.a
 
   build-linux-arm:
-    name: linux
+    name: linux-arm
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
