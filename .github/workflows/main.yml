@@ -7,6 +7,7 @@ defaults:
 
 jobs:
   build-mac:
+    if: ${{ false }}  # disable for now
     name: mac
     runs-on: macos-12
     strategy:
@@ -49,6 +50,7 @@ jobs:
           name: include
 
   build-linux:
+    if: ${{ false }}  # disable for now
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -84,3 +86,41 @@ jobs:
         with:
           path: ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a
           name: libv8_monolith-linux-${{ matrix.platform }}.a
+
+  build-linux-arm:
+    name: linux
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: setup v8 build tools
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+          fetch v8
+      - name: fetch beta branch
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cd $GITHUB_WORKSPACE/v8
+          git checkout branch-heads/12.0
+          gclient sync
+          mkdir -p out.gn/arm64.release/
+      - name: build v8 static library
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cp args.linux.arm64.gn $GITHUB_WORKSPACE/v8/out.gn/arm64.release/args.gn
+          cd $GITHUB_WORKSPACE/v8
+          build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+          gn gen out.gn/arm64.release
+          ninja v8_monolith -C out.gn/arm64.release/
+      - name: Upload static library
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/v8/out.gn/arm64.release/obj/libv8_monolith.a
+          name: libv8_monolith-linux-arm64.a
