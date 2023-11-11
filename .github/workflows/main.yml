@@ -45,4 +45,4 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ${{ github.workspace }}/include.tar.gz
           asset_name: include.tar.gz
-          content_type: application/gzip
+          asset_content_type: application/gzip
