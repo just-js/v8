@@ -169,7 +169,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v2
         with:
-          python-version: 2.7.17
+          python-version: 3.10
       - name: Install MSVC/MCBuild (Windows)
         uses: microsoft/setup-msbuild@v1.0.2
       - name: setup v8 build tools
