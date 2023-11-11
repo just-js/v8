@@ -1,4 +1,4 @@
-name: Build V8
+name: build and publish v8 libs
 on:
   release:
     types: [published]
