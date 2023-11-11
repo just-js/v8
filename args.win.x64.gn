@@ -37,7 +37,6 @@ v8_imminent_deprecation_warnings=false
 v8_scriptormodule_legacy_lifetime=true
 v8_enable_sandbox=false
 use_dummy_lastchange=true
-no_inline_line_tables=true
 use_debug_fission=false
 v8_enable_snapshot_compression=false
 v8_enable_javascript_promise_hooks=true

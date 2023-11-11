@@ -196,7 +196,8 @@ jobs:
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
+          ls -lah ./
+          gzip -9 -c v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
       - name: Upload static library
         uses: actions/upload-release-asset@v1
         env:
