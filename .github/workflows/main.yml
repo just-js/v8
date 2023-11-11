@@ -16,14 +16,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64]
+        platform: [x64, arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: foo
-        run: |
-          gzip -9 -c bump.sh > bump.sh.tar.gz
-          ls -lah *.tar.gz
       - name: setup v8 build tools
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
@@ -68,4 +64,94 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
           asset_name: libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
+          asset_content_type: application/gzip
+
+  build-linux:
+    name: linux
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: setup v8 build tools
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+          fetch v8
+      - name: fetch beta branch
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cd $GITHUB_WORKSPACE/v8
+          echo checking out ${{  github.ref_name }}
+          git checkout branch-heads/${{  github.ref_name }}
+          gclient sync
+          mkdir -p out.gn/${{ matrix.platform }}.release/
+      - name: build v8 static library
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cp args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
+          cd $GITHUB_WORKSPACE/v8
+          build/linux/sysroot_scripts/install-sysroot.py --arch=${{ matrix.platform }}
+          gn gen out.gn/${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
+      - name: Compress static library
+        run: |
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.tar.gz
+      - name: Upload static library
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: libv8_monolith-linux-${{ matrix.platform }}.a.tar.gz
+          asset_name: libv8_monolith-linux-${{ matrix.platform }}.a.tar.gz
+          asset_content_type: application/gzip
+
+  build-linux-arm:
+    name: linux-arm
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: setup v8 build tools
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+          fetch v8
+      - name: fetch beta branch
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cd $GITHUB_WORKSPACE/v8
+          echo checking out ${{  github.ref_name }}
+          git checkout branch-heads/${{  github.ref_name }}
+          gclient sync
+          mkdir -p out.gn/arm64.release/
+      - name: build v8 static library
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cp args.linux.arm64.gn $GITHUB_WORKSPACE/v8/out.gn/arm64.release/args.gn
+          cd $GITHUB_WORKSPACE/v8
+          build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
+          gn gen out.gn/arm64.release
+          ninja v8_monolith -C out.gn/arm64.release/
+      - name: Compress static library
+        run: |
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/arm64.release/obj/libv8_monolith.a > libv8_monolith-linux-arm64.a.tar.gz
+      - name: Upload static library
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: libv8_monolith-linux-arm64.a.tar.gz
+          asset_name: libv8_monolith-linux-arm64.a.tar.gz
           asset_content_type: application/gzip
