@@ -3,7 +3,6 @@ is_debug = false
 target_cpu = "x64"
 
 # Additional command-line args:
-target_os="windows"
 target_cpu="x64"
 v8_target_cpu="x64"
 v8_use_external_startup_data=false
