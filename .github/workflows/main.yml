@@ -11,6 +11,7 @@ defaults:
 jobs:
 
   build-linux:
+    if: ${{ false }}  # disable for now
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -30,7 +31,6 @@ jobs:
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cd $GITHUB_WORKSPACE/v8
-          echo checking out ${{  github.ref_name }}
           git checkout branch-heads/${{  github.ref_name }}
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
@@ -68,6 +68,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-linux-arm:
+    if: ${{ false }}  # disable for now
     name: linux-arm
     runs-on: ubuntu-22.04
     strategy:
@@ -87,7 +88,6 @@ jobs:
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cd $GITHUB_WORKSPACE/v8
-          echo checking out ${{  github.ref_name }}
           git checkout branch-heads/${{  github.ref_name }}
           gclient sync
           mkdir -p out.gn/arm64.release/
@@ -113,6 +113,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-mac:
+    if: ${{ false }}  # disable for now
     name: mac
     runs-on: macos-12
     strategy:
@@ -132,7 +133,6 @@ jobs:
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cd $GITHUB_WORKSPACE/v8
-          echo checking out ${{  github.ref_name }}
           git checkout branch-heads/${{  github.ref_name }}
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
@@ -155,3 +155,52 @@ jobs:
           asset_path: libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
           asset_name: libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
           asset_content_type: application/gzip
+
+  build-windows:
+    name: windows
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install MSVC/MCBuild (Windows)
+        uses: microsoft/setup-msbuild@v1.0.2
+      - name: setup v8 build tools
+        shell: pwsh
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          gclient
+          fetch v8
+      - name: fetch beta branch
+        shell: pwsh
+        run: |
+          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          cd $GITHUB_WORKSPACE/v8
+          git checkout branch-heads/${{  github.ref_name }}
+          gclient sync
+          New-Item -ItemType directory -Path ./out.gn/${{ matrix.platform }}.release/
+      - name: build v8 static library
+        shell: pwsh
+        run: |
+          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          cp args.win.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
+          cd $GITHUB_WORKSPACE/v8
+          gn gen out.gn/${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
+      - name: Compress static library
+        run: |
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
+      - name: Upload static library
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
+          asset_name: libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
+          asset_content_type: application/gzip
+

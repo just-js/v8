@@ -49,5 +49,6 @@ v8_enable_shared_ro_heap=false
 v8_enable_verify_heap=false
 v8_enable_pointer_compression=false
 v8_enable_maglev
+v8_use_zlib=false
 =
 false
