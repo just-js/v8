@@ -175,10 +175,13 @@ jobs:
           echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           gclient
           fetch v8
+      - name: fetch v8 source
+        run: |
+          gclient
+          fetch v8
       - name: fetch beta branch
         shell: pwsh
         run: |
-          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           cd $GITHUB_WORKSPACE/v8
           git checkout branch-heads/${{  github.ref_name }}
           gclient sync
@@ -186,7 +189,6 @@ jobs:
       - name: build v8 static library
         shell: pwsh
         run: |
-          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           cp args.win.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
           cd $GITHUB_WORKSPACE/v8
           gn gen out.gn/${{ matrix.platform }}.release
