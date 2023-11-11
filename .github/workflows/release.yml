@@ -11,6 +11,7 @@ defaults:
 jobs:
 
   create-release:
+    if: ${{ false }}  # disable for now
     name: Create Release
     runs-on: ubuntu-22.04
     steps:

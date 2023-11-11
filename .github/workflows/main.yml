@@ -1,7 +1,7 @@
 name: build and publish v8 libs
 on:
   release:
-    types: [published]
+    types: [draft]
 
 defaults:
   run:
