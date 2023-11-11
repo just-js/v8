@@ -183,18 +183,15 @@ jobs:
           export DEPOT_TOOLS_WIN_TOOLCHAIN=0
           gclient
           fetch v8
-      - name: fetch beta branch
-        shell: pwsh
-        run: |
-          cd $GITHUB_WORKSPACE/v8
+          cd v8
           git checkout branch-heads/${{  github.ref_name }}
           gclient sync
-          New-Item -ItemType directory -Path ./out.gn/${{ matrix.platform }}.release/
       - name: build v8 static library
         shell: pwsh
         run: |
-          cp args.win.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
-          cd $GITHUB_WORKSPACE/v8
+          Set-Location -Path v8
+          New-Item -ItemType directory -Path ./out.gn/${{ matrix.platform }}.release/
+          Copy-Item "../args.win.${{ matrix.platform }}.gn" -Destination "./out.gn/${{ matrix.platform }}.release/args.gn" -force          
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
