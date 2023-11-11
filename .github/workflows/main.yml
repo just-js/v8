@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v3
       - name: foo
         run |
-          cat bump.sh | gzip -9 > bump.sh.tar.gz
+          gzip -9 -c bump.sh > bump.sh.tar.gz
           ls -lah *.tar.gz
       - name: setup v8 build tools
         run: |
@@ -59,7 +59,7 @@ jobs:
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
-          cat ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a | gzip -9 > libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
       - name: Upload static library
         uses: actions/upload-release-asset@v1
         env:
