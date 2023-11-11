@@ -197,7 +197,10 @@ jobs:
       - name: Compress static library
         run: |
           ls -lah ./
-          gzip -9 -c v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
+          ls -lah v8/out.gn/
+          ls -lah v8/out.gn/${{ matrix.platform }}.release/
+          ls -lah v8/out.gn/${{ matrix.platform }}.release/obj/
+          gzip -9 -c v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib > v8_monolith-win-${{ matrix.platform }}.lib.tar.gz
       - name: Upload static library
         uses: actions/upload-release-asset@v1
         env:
