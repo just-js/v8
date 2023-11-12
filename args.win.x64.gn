@@ -14,7 +14,6 @@ is_asan=false
 is_clang=true
 use_custom_libcxx=false
 use_custom_libcxx_for_host=false
-use_sysroot=false
 use_gold=false
 is_debug=false
 treat_warnings_as_errors=false
