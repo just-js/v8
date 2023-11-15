@@ -18,22 +18,21 @@ ARG GN_COMMIT=9a45b61238317b09b778c47555527c9926700e0c
 
 RUN echo 1
 
-RUN \
-  apk add --update --virtual .gn-build-dependencies \
+RUN apk add --update --virtual .gn-build-dependencies \
     alpine-sdk \
     binutils-gold \
     clang \
     curl \
     git \
-    llvm9 \
+    llvm \
     ninja \
-    python \
+    python3 \
     tar \
     xz
 
   # Two quick fixes: we need the LLVM tooling in $PATH, and we
   # also have to use gold instead of ld.
-RUN PATH=$PATH:/usr/lib/llvm9/bin \
+RUN PATH=$PATH:/usr/lib/llvm17/bin \
   && cp -f /usr/bin/ld.gold /usr/bin/ld \
 
   # Clone and build gn
@@ -56,7 +55,7 @@ RUN PATH=$PATH:/usr/lib/llvm9/bin \
 # bother figuring out). Fortunately we only need it to actually download the source and its dependencies
 # so we can do this in a place with glibc, and then pass the results on to an alpine builder.
 #
-FROM debian:9 as source
+FROM debian:10 as source
 
 # The V8 version we want to use. It's assumed that this will be a version tag, but it's just
 # used as "git commit $V8_VERSION" so anything that git can resolve will work.
@@ -68,24 +67,24 @@ RUN \
   apt-get install -y \
     git \
     curl \
-    python && \
+    python3 && \
 
   # Clone depot_tools
   git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /tmp/depot_tools && \
-  PATH=$PATH:/tmp/depot_tools && \
+  PATH=$PATH:/tmp/depot_tools
 
   # fetch V8
-  cd /tmp && \
+RUN  export PATH=$PATH:/tmp/depot_tools && cd /tmp && \
   fetch v8 && \
   cd /tmp/v8 && \
   git checkout branch-heads/${V8_VERSION} && \
-  gclient sync && \
+  gclient sync
 
   # cleanup
-  apt-get remove --purge -y \
+RUN  apt-get remove --purge -y \
     git \
     curl \
-    python && \
+    python3 && \
   apt-get autoremove -y && \
   rm -rf /var/lib/apt/lists/*
 

@@ -1,0 +1,38 @@
+name: build and publish v8 libs
+on: [push]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  build-linux-alpine:
+    if: ${{ false }}  # disable
+    name: linux-alpine
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: build docker image
+        run: |
+          docker build -t v8-build -f alpine.Dockerfile .
+          docker run -dt --rm --name v8-build v8-build /bin/sh
+          docker cp v8-build:/build/v8/out.gn/x64.release/obj/libv8_monolith.a libv8_monolith.a
+          docker kill v8-build
+      - name: Compress static library
+        run: |
+          gzip -9 -c ${{ github.workspace }}/libv8_monolith.a > libv8_monolith-linux-musl-x64.a.tar.gz
+      - name: Upload static library
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: libv8_monolith-linux-musl-x64.a.tar.gz
+          asset_name: libv8_monolith-linux-musl-x64.a.tar.gz
+          asset_content_type: application/gzip

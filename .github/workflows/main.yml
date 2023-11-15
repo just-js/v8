@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -92,7 +92,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-linux-arm:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux-arm
     runs-on: ubuntu-22.04
     strategy:
@@ -137,7 +137,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-linux-alpine:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux-alpine
     runs-on: ubuntu-22.04
     strategy:
@@ -167,7 +167,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-mac:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-12
     strategy:
@@ -211,7 +211,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-windows:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: windows
     runs-on: windows-latest
     strategy:
