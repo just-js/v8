@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -46,6 +46,30 @@ jobs:
           asset_path: ${{ github.workspace }}/include.tar.gz
           asset_name: include.tar.gz
           asset_content_type: application/gzip
+      - name: Compress source
+        run: |
+          tar -zcvf src.tar.gz v8/src
+      - name: Upload source
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ github.workspace }}/src.tar.gz
+          asset_name: src.tar.gz
+          asset_content_type: application/gzip
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ github.workspace }}/gen.tar.gz
+          asset_name: gen.tar.gz
+          asset_content_type: application/gzip
       - name: build v8 static library
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -68,7 +92,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-linux-arm:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux-arm
     runs-on: ubuntu-22.04
     strategy:
@@ -112,8 +136,38 @@ jobs:
           asset_name: libv8_monolith-linux-arm64.a.tar.gz
           asset_content_type: application/gzip
 
-  build-mac:
+  build-linux-alpine:
 #    if: ${{ false }}  # disable
+    name: linux-alpine
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: build docker image
+        run: |
+          docker build -t v8-build -f alpine.Dockerfile .
+          docker run -dt --rm --name v8-build v8-build /bin/sh
+          docker cp v8-build:/build/v8/out.gn/x64.release/obj/libv8_monolith.a libv8_monolith.a
+          docker kill v8-build
+      - name: Compress static library
+        run: |
+          gzip -9 -c ${{ github.workspace }}/libv8_monolith.a > libv8_monolith-linux-musl-x64.a.tar.gz
+      - name: Upload static library
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: libv8_monolith-linux-musl-x64.a.tar.gz
+          asset_name: libv8_monolith-linux-musl-x64.a.tar.gz
+          asset_content_type: application/gzip
+
+  build-mac:
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-12
     strategy:
@@ -157,7 +211,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-windows:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: windows
     runs-on: windows-latest
     strategy:
