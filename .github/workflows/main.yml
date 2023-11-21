@@ -59,6 +59,7 @@ jobs:
           asset_name: src.tar.gz
           asset_content_type: application/gzip
       - name: Compress generated source
+        if: ${{ false }}  # disable
         run: |
           tar -zcvf gen.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
       - name: Upload generated source
@@ -80,15 +81,15 @@ jobs:
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.tar.gz
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.gz
       - name: Upload static library
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: libv8_monolith-linux-${{ matrix.platform }}.a.tar.gz
-          asset_name: libv8_monolith-linux-${{ matrix.platform }}.a.tar.gz
+          asset_path: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          asset_name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
           asset_content_type: application/gzip
 
   build-linux-arm:
@@ -125,45 +126,15 @@ jobs:
           ninja v8_monolith -C out.gn/arm64.release/
       - name: Compress static library
         run: |
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/arm64.release/obj/libv8_monolith.a > libv8_monolith-linux-arm64.a.tar.gz
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/arm64.release/obj/libv8_monolith.a > libv8_monolith-linux-arm64.a.gz
       - name: Upload static library
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: libv8_monolith-linux-arm64.a.tar.gz
-          asset_name: libv8_monolith-linux-arm64.a.tar.gz
-          asset_content_type: application/gzip
-
-  build-linux-alpine:
-    if: ${{ false }}  # disable
-    name: linux-alpine
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [x64]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: build docker image
-        run: |
-          docker build -t v8-build -f alpine.Dockerfile .
-          docker run -dt --rm --name v8-build v8-build /bin/sh
-          docker cp v8-build:/build/v8/out.gn/x64.release/obj/libv8_monolith.a libv8_monolith.a
-          docker kill v8-build
-      - name: Compress static library
-        run: |
-          gzip -9 -c ${{ github.workspace }}/libv8_monolith.a > libv8_monolith-linux-musl-x64.a.tar.gz
-      - name: Upload static library
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: libv8_monolith-linux-musl-x64.a.tar.gz
-          asset_name: libv8_monolith-linux-musl-x64.a.tar.gz
+          asset_path: libv8_monolith-linux-arm64.a.gz
+          asset_name: libv8_monolith-linux-arm64.a.gz
           asset_content_type: application/gzip
 
   build-mac:
@@ -199,15 +170,15 @@ jobs:
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-mac-${{ matrix.platform }}.a.gz
       - name: Upload static library
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
-          asset_name: libv8_monolith-mac-${{ matrix.platform }}.a.tar.gz
+          asset_path: libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          asset_name: libv8_monolith-mac-${{ matrix.platform }}.a.gz
           asset_content_type: application/gzip
 
   build-windows:
@@ -251,14 +222,14 @@ jobs:
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
-          gzip -9 -c v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
+          gzip -9 -c v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.gz
       - name: Upload static library
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
-          asset_name: libv8_monolith-win-${{ matrix.platform }}.lib.tar.gz
+          asset_path: libv8_monolith-win-${{ matrix.platform }}.lib.gz
+          asset_name: libv8_monolith-win-${{ matrix.platform }}.lib.gz
           asset_content_type: application/gzip
 
