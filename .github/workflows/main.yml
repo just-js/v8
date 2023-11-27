@@ -4,6 +4,9 @@ on:
     types:
       - published
 
+env:
+  V8_VERSION: "12.0"
+
 defaults:
   run:
     shell: bash
@@ -31,7 +34,7 @@ jobs:
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cd $GITHUB_WORKSPACE/v8
-          git checkout branch-heads/${{  github.ref_name }}
+          git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
       - name: Compress headers
@@ -113,7 +116,7 @@ jobs:
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cd $GITHUB_WORKSPACE/v8
-          git checkout branch-heads/${{  github.ref_name }}
+          git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/arm64.release/
       - name: build v8 static library
@@ -158,7 +161,7 @@ jobs:
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cd $GITHUB_WORKSPACE/v8
-          git checkout branch-heads/${{  github.ref_name }}
+          git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
       - name: build v8 static library
@@ -210,7 +213,7 @@ jobs:
           gclient
           fetch v8
           cd v8
-          git checkout branch-heads/${{  github.ref_name }}
+          git checkout branch-heads/$V8_VERSION
           gclient sync
       - name: build v8 static library
         shell: pwsh

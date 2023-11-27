@@ -50,15 +50,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/src.tar.gz
           name: src.tar.gz
-      - name: Compress generated source
-        if: ${{ false }}  # disable
-        run: |
-          tar -zcvf gen.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
-      - name: Upload generated source
-        uses: actions/upload-artifact@v3
-        with:
-          path: ${{ github.workspace }}/gen.tar.gz
-          name: gen.tar.gz
       - name: build v8 static library
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -75,6 +66,14 @@ jobs:
         with:
           path: libv8_monolith-linux-${{ matrix.platform }}.a.gz
           name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-linux-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
+          name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm:
 #    if: ${{ false }}  # disable
@@ -116,6 +115,14 @@ jobs:
         with:
           path: libv8_monolith-linux-arm64.a.gz
           name: libv8_monolith-linux-arm64.a.gz
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-linux-arm64.tar.gz v8/out.gn/arm64.release/gen
+      - name: Upload generated source
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/gen-linux-arm64.tar.gz
+          name: gen-linux-arm64.tar.gz
 
   build-mac:
 #    if: ${{ false }}  # disable
@@ -156,6 +163,14 @@ jobs:
         with:
           path: libv8_monolith-mac-${{ matrix.platform }}.a.gz
           name: libv8_monolith-mac-${{ matrix.platform }}.a.gz
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-mac-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz
+          name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-windows:
 #    if: ${{ false }}  # disable
@@ -204,3 +219,11 @@ jobs:
         with:
           path: libv8_monolith-win-${{ matrix.platform }}.lib.gz
           name: libv8_monolith-win-${{ matrix.platform }}.lib.gz
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-win-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/gen-win-${{ matrix.platform }}.tar.gz
+          name: gen-win-${{ matrix.platform }}.tar.gz
