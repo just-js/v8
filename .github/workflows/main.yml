@@ -140,7 +140,7 @@ jobs:
           asset_content_type: application/gzip
       - name: Compress generated source
         run: |
-          tar -zcvf gen-linux-arm64.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+          tar -zcvf gen-linux-arm64.tar.gz v8/out.gn/arm64.release/gen
       - name: Upload generated source
         uses: actions/upload-release-asset@v1
         env:
