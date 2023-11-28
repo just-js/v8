@@ -61,19 +61,6 @@ jobs:
           asset_path: ${{ github.workspace }}/src.tar.gz
           asset_name: src.tar.gz
           asset_content_type: application/gzip
-      - name: Compress generated source
-        if: ${{ false }}  # disable
-        run: |
-          tar -zcvf gen.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
-      - name: Upload generated source
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/gen.tar.gz
-          asset_name: gen.tar.gz
-          asset_content_type: application/gzip
       - name: build v8 static library
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -93,6 +80,18 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: libv8_monolith-linux-${{ matrix.platform }}.a.gz
           asset_name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          asset_content_type: application/gzip
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-linux-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
+          asset_name: gen-linux-${{ matrix.platform }}.tar.gz
           asset_content_type: application/gzip
 
   build-linux-arm:
@@ -139,6 +138,18 @@ jobs:
           asset_path: libv8_monolith-linux-arm64.a.gz
           asset_name: libv8_monolith-linux-arm64.a.gz
           asset_content_type: application/gzip
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-linux-arm64.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ github.workspace }}/gen-linux-arm64.tar.gz
+          asset_name: gen-linux-arm64.tar.gz
+          asset_content_type: application/gzip
 
   build-mac:
 #    if: ${{ false }}  # disable
@@ -182,6 +193,18 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: libv8_monolith-mac-${{ matrix.platform }}.a.gz
           asset_name: libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          asset_content_type: application/gzip
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-mac-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz
+          asset_name: gen-mac-${{ matrix.platform }}.tar.gz
           asset_content_type: application/gzip
 
   build-windows:
@@ -234,5 +257,17 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: libv8_monolith-win-${{ matrix.platform }}.lib.gz
           asset_name: libv8_monolith-win-${{ matrix.platform }}.lib.gz
+          asset_content_type: application/gzip
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-win-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ github.workspace }}/gen-win-${{ matrix.platform }}.tar.gz
+          asset_name: gen-win-${{ matrix.platform }}.tar.gz
           asset_content_type: application/gzip
 
