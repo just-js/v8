@@ -2,7 +2,7 @@ name: build and publish v8 libs
 on: [push]
 
 env:
-  V8_VERSION: "12.0"
+  V8_VERSION: "12.1"
 
 defaults:
   run:
@@ -213,12 +213,13 @@ jobs:
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
-          gzip -9 -c v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.gz
+          zip libv8_monolith-win-${{ matrix.platform }}.zip v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib
+          # gzip -9 -c v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib > libv8_monolith-win-${{ matrix.platform }}.lib.gz
       - name: Upload static library
         uses: actions/upload-artifact@v3
         with:
-          path: libv8_monolith-win-${{ matrix.platform }}.lib.gz
-          name: libv8_monolith-win-${{ matrix.platform }}.lib.gz
+          path: libv8_monolith-win-${{ matrix.platform }}.zip
+          name: libv8_monolith-win-${{ matrix.platform }}.zip
       - name: Compress generated source
         run: |
           tar -zcvf gen-win-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
