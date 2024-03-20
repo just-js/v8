@@ -50,16 +50,12 @@ jobs:
         with:
           path: ${{ github.workspace }}/src.tar.gz
           name: src.tar.gz
-      - name: prepare v8 static library
+      - name: build v8 static library
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cp args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
           cd $GITHUB_WORKSPACE/v8
           build/linux/sysroot_scripts/install-sysroot.py --arch=${{ matrix.platform }}
-      - name: build v8 static library
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
           ninja -C out.gn/${{ matrix.platform }}.release/
 #      - name: Compress static library
 #        run: |
