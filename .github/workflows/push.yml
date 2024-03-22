@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -66,35 +66,35 @@ jobs:
 #        with:
 #          path: libv8_monolith-linux-${{ matrix.platform }}.a.gz
 #          name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
-      - name: Compress release files
+      - name: Compress static libraries
         run: |
           mkdir v8-deps
-          cp out.gn/${{ matrix.platform }}.release/mksnapshot v8-deps/
-          cp out.gn/${{ matrix.platform }}.release/snapshot_blob.bin v8-deps/
-          cp out.gn/${{ matrix.platform }}.release/icudtl.dat v8-deps/
-          cp out.gn/${{ matrix.platform }}.release/args.gn v8-deps/
-          cp out.gn/${{ matrix.platform }}.release/obj/libwee8.a v8-deps/
-          cp out.gn/${{ matrix.platform }}.release/obj/wee8.ninja v8-deps/
+          cp v8/out.gn/${{ matrix.platform }}.release/mksnapshot v8-deps/
+          cp v8/out.gn/${{ matrix.platform }}.release/snapshot_blob.bin v8-deps/
+          cp v8/out.gn/${{ matrix.platform }}.release/icudtl.dat v8-deps/
+          cp v8/out.gn/${{ matrix.platform }}.release/args.gn v8-deps/
+          cp v8/out.gn/${{ matrix.platform }}.release/obj/libwee8.a v8-deps/
+          cp v8/out.gn/${{ matrix.platform }}.release/obj/wee8.ninja v8-deps/
           tar -zcvf v8-deps-linux-${{ matrix.platform }}.tar.gz v8-deps
 #          tar -zcvf release-linux-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release
-      - name: Upload generated release
+      - name: Upload static libraries
         uses: actions/upload-artifact@v3
         with:
           path: ${{ github.workspace }}/v8-deps-linux-${{ matrix.platform }}.tar.gz
           name: v8-deps-linux-${{ matrix.platform }}.tar.gz
 #          path: ${{ github.workspace }}/release-linux-${{ matrix.platform }}.tar.gz
 #          name: release-linux-${{ matrix.platform }}.tar.gz
-#      - name: Compress generated source
-#        run: |
-#          tar -zcvf gen-linux-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
-#      - name: Upload generated source
-#        uses: actions/upload-artifact@v3
-#        with:
-#          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
-#          name: gen-linux-${{ matrix.platform }}.tar.gz
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-linux-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
+          name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux-arm
     runs-on: ubuntu-22.04
     strategy:
@@ -125,18 +125,18 @@ jobs:
           build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out.gn/arm64.release
           ninja -C out.gn/arm64.release/
-      - name: Compress release files
+      - name: Compress static libraries
         run: |
           mkdir v8-deps
-          cp out.gn/arm64.release/mksnapshot v8-deps/
-          cp out.gn/arm64.release/snapshot_blob.bin v8-deps/
-          cp out.gn/arm64.release/icudtl.dat v8-deps/
-          cp out.gn/arm64.release/args.gn v8-deps/
-          cp out.gn/arm64.release/obj/libwee8.a v8-deps/
-          cp out.gn/arm64.release/obj/wee8.ninja v8-deps/
+          cp v8/out.gn/arm64.release/mksnapshot v8-deps/
+          cp v8/out.gn/arm64.release/snapshot_blob.bin v8-deps/
+          cp v8/out.gn/arm64.release/icudtl.dat v8-deps/
+          cp v8/out.gn/arm64.release/args.gn v8-deps/
+          cp v8/out.gn/arm64.release/obj/libwee8.a v8-deps/
+          cp v8/out.gn/arm64.release/obj/wee8.ninja v8-deps/
           tar -zcvf v8-deps-linux-arm64.tar.gz v8-deps
 #          tar -zcvf release-linux-arm64.tar.gz v8/out.gn/arm64.release
-      - name: Upload generated release
+      - name: Upload static libraries
         uses: actions/upload-artifact@v3
         with:
           path: ${{ github.workspace }}/v8-deps-linux-arm64.tar.gz
@@ -151,14 +151,14 @@ jobs:
 #        with:
 #          path: libv8_monolith-linux-arm64.a.gz
 #          name: libv8_monolith-linux-arm64.a.gz
-#      - name: Compress generated source
-#        run: |
-#          tar -zcvf gen-linux-arm64.tar.gz v8/out.gn/arm64.release/gen
-#      - name: Upload generated source
-#        uses: actions/upload-artifact@v3
-#        with:
-#          path: ${{ github.workspace }}/gen-linux-arm64.tar.gz
-#          name: gen-linux-arm64.tar.gz
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-linux-arm64.tar.gz v8/out.gn/arm64.release/gen
+      - name: Upload generated source
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/gen-linux-arm64.tar.gz
+          name: gen-linux-arm64.tar.gz
 
   build-mac:
 #    if: ${{ false }}  # disable
@@ -199,10 +199,10 @@ jobs:
 #        with:
 #          path: ${{ github.workspace }}/release-mac-${{ matrix.platform }}.tar.gz
 #          name: release-mac-${{ matrix.platform }}.tar.gz
-      - name: Compress static library
+      - name: Compress static libraries
         run: |
           gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-mac-${{ matrix.platform }}.a.gz
-      - name: Upload static library
+      - name: Upload static libraries
         uses: actions/upload-artifact@v3
         with:
           path: libv8_monolith-mac-${{ matrix.platform }}.a.gz
@@ -248,18 +248,43 @@ jobs:
           cd $GITHUB_WORKSPACE/v8
           gn gen out.gn/${{ matrix.platform }}.release
           ninja -C out.gn/${{ matrix.platform }}.release/
-      - name: Compress release files
+
+      - name: Compress static libraries
         run: |
-          tar -zcvf release-mac-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release
-      - name: Upload generated release
+          mkdir v8-deps
+          cp v8/out.gn/arm64.release/snapshot_blob.bin v8-deps/
+          cp v8/out.gn/arm64.release/icudtl.dat v8-deps/
+          cp v8/out.gn/arm64.release/args.gn v8-deps/
+          cp v8/out.gn/arm64.release/obj/libwee8.a v8-deps/
+          cp v8/out.gn/arm64.release/obj/wee8.ninja v8-deps/
+          tar -zcvf v8-deps-mac-${{ matrix.platform }}.tar.gz v8-deps
+#          tar -zcvf release-linux-arm64.tar.gz v8/out.gn/arm64.release
+      - name: Upload static libraries
         uses: actions/upload-artifact@v3
         with:
-          path: ${{ github.workspace }}/release-mac-${{ matrix.platform }}.tar.gz
-          name: release-mac-${{ matrix.platform }}.tar.gz
+          path: ${{ github.workspace }}/v8-deps-mac-${{ matrix.platform }}.tar.gz
+          name: v8-deps-mac-${{ matrix.platform }}.tar.gz
+      - name: Compress generated source
+        run: |
+          tar -zcvf gen-mac-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload generated source
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz
+          name: gen-mac-${{ matrix.platform }}.tar.gz
+
+#      - name: Compress release files
+#        run: |
+#          tar -zcvf release-mac-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release
+#      - name: Upload generated release
+#        uses: actions/upload-artifact@v3
+#        with:
+#          path: ${{ github.workspace }}/release-mac-${{ matrix.platform }}.tar.gz
+#          name: release-mac-${{ matrix.platform }}.tar.gz
 
 ## working
   build-windows:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: windows
     runs-on: windows-latest
     strategy:
@@ -297,11 +322,11 @@ jobs:
           Copy-Item "../args.win.${{ matrix.platform }}.gn" -Destination "./out.gn/${{ matrix.platform }}.release/args.gn" -force          
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
-      - name: Compress static library
+      - name: Compress static libraries
         shell: pwsh
         run: |
           Compress-Archive -Path v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination libv8_monolith-win-${{ matrix.platform }}.zip
-      - name: Upload static library
+      - name: Upload static libraries
         uses: actions/upload-artifact@v3
         with:
           path: libv8_monolith-win-${{ matrix.platform }}.zip
