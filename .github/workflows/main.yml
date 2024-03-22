@@ -149,7 +149,7 @@ jobs:
       - name: Compress static libraries
         run: |
           mkdir v8-deps
-          cp v8/out.gn/arm64.release/mksnapshot v8-deps/
+          cp v8/out.gn/arm64.release/clang_x64_v8_arm64/mksnapshot v8-deps/
           cp v8/out.gn/arm64.release/snapshot_blob.bin v8-deps/
           cp v8/out.gn/arm64.release/icudtl.dat v8-deps/
           cp v8/out.gn/arm64.release/args.gn v8-deps/
@@ -280,6 +280,7 @@ jobs:
       - name: Compress static libraries
         run: |
           mkdir v8-deps
+          cp v8/out.gn/${{ matrix.platform }}.release/clang_x64_v8_arm64/mksnapshot v8-deps/
           cp v8/out.gn/${{ matrix.platform }}.release/snapshot_blob.bin v8-deps/
           cp v8/out.gn/${{ matrix.platform }}.release/icudtl.dat v8-deps/
           cp v8/out.gn/${{ matrix.platform }}.release/args.gn v8-deps/

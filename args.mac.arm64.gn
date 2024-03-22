@@ -6,7 +6,6 @@ target_cpu = "arm64"
 target_os="mac"
 target_cpu="arm64"
 v8_target_cpu="arm64"
-v8_use_external_startup_data=false
 v8_enable_future=true
 is_official_build=false
 is_component_build=false
