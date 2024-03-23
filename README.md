@@ -50,9 +50,9 @@ A build of the v8 monolithic library
 
 A build of the v8 monolithic library
 
-- [static library](https://github.com/just-js/v8/releases/download/12.3/libv8_monolith-win-x64.lib.gz)
+- [static library](https://github.com/just-js/v8/releases/download/12.3/libv8_monolith-win-x64.zip)
 - [build args](args.win.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/12.3/gen-win-x64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/12.3/gen-win-x64.zip)
 
 
 # build instructions
