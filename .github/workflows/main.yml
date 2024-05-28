@@ -5,7 +5,7 @@ on:
       - published
 
 env:
-  V8_VERSION: "12.4"
+  V8_VERSION: "12.6"
 
 defaults:
   run:
