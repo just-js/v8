@@ -54,10 +54,3 @@ A build of the v8 monolithic library
 - [build args](args.win.x64.gn)
 - [generated source code](https://github.com/just-js/v8/releases/download/12.6/gen-win-x64.zip)
 
-
-# build instructions
-
-TODO
-
-examples of compiling a bare-bones v8 runtime with the libs for each platform
-
