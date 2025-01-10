@@ -13,6 +13,7 @@ this repo containes up-to-date builds of the google v8 static libraries for the 
 https://github.com/just-js/v8/releases/tag/12.9
 
 - [v8 headers](https://github.com/just-js/v8/releases/download/12.9/include.tar.gz)
+- [v8 source](https://github.com/just-js/v8/releases/download/12.9/src.tar.gz)
 
 ## linux x64
 
