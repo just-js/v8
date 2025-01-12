@@ -10,48 +10,48 @@ this repo containes up-to-date builds of the google v8 static libraries for the 
 
 # current release
 
-https://github.com/just-js/v8/releases/tag/12.9
+https://github.com/just-js/v8/releases/tag/13.2
 
-- [v8 headers](https://github.com/just-js/v8/releases/download/12.9/include.tar.gz)
-- [v8 source](https://github.com/just-js/v8/releases/download/12.9/src.tar.gz)
+- [v8 headers](https://github.com/just-js/v8/releases/download/13.2/include.tar.gz)
+- [v8 source](https://github.com/just-js/v8/releases/download/13.2/src.tar.gz)
 
 ## linux x64
 
 A build of the v8 monolithic library
 
-- [static libraries](https://github.com/just-js/v8/releases/download/12.9/libv8_monolith-linux-x64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/13.2/libv8_monolith-linux-x64.a.gz)
 - [build args](args.linux.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/12.9/gen-linux-x64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/13.2/gen-linux-x64.tar.gz)
 
 ## linux arm64
 
 A build of the v8 monolithic library
 
-- [static libraries](https://github.com/just-js/v8/releases/download/12.9/libv8_monolith-linux-arm64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/13.2/libv8_monolith-linux-arm64.a.gz)
 - [build args](args.linux.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/12.9/gen-linux-arm64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/13.2/gen-linux-arm64.tar.gz)
 
 ## macos x64
 
 A build of the v8 monolithic library
 
-- [static libraries](https://github.com/just-js/v8/releases/download/12.9/libv8_monolith-mac-x64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/13.2/libv8_monolith-mac-x64.a.gz)
 - [build args](args.mac.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/12.9/gen-mac-x64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/13.2/gen-mac-x64.tar.gz)
 
 ## macos arm64
 
 A build of the v8 monolithic library
 
-- [static libraries](https://github.com/just-js/v8/releases/download/12.9/libv8_monolith-mac-arm64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/13.2/libv8_monolith-mac-arm64.a.gz)
 - [build args](args.mac.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/12.9/gen-mac-arm64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/13.2/gen-mac-arm64.tar.gz)
 
 ## windows x64
 
 A build of the v8 monolithic library
 
-- [static library](https://github.com/just-js/v8/releases/download/12.9/libv8_monolith-win-x64.zip)
+- [static library](https://github.com/just-js/v8/releases/download/13.2/libv8_monolith-win-x64.zip)
 - [build args](args.win.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/12.9/gen-win-x64.zip)
+- [generated source code](https://github.com/just-js/v8/releases/download/13.2/gen-win-x64.zip)
 
