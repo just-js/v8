@@ -57,6 +57,7 @@ jobs:
           cd $GITHUB_WORKSPACE/v8
           build/linux/sysroot_scripts/install-sysroot.py --arch=${{ matrix.platform }}
           gn gen out.gn/${{ matrix.platform }}.release
+          gn args --list
           ninja -j 4 v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
@@ -106,6 +107,7 @@ jobs:
           cd $GITHUB_WORKSPACE/v8
           build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out.gn/arm64.release
+          gn args --list
           ninja -j 4  v8_monolith -C out.gn/arm64.release/
       - name: Compress static library
         run: |
@@ -154,6 +156,7 @@ jobs:
           cp args.mac.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
           cd $GITHUB_WORKSPACE/v8
           gn gen out.gn/${{ matrix.platform }}.release
+          gn args --list
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         run: |
@@ -210,6 +213,7 @@ jobs:
           New-Item -ItemType directory -Path ./out.gn/${{ matrix.platform }}.release/
           Copy-Item "../args.win.${{ matrix.platform }}.gn" -Destination "./out.gn/${{ matrix.platform }}.release/args.gn" -force          
           gn gen out.gn/${{ matrix.platform }}.release
+          gn args --list
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
       - name: Compress static library
         shell: pwsh
