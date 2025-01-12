@@ -68,8 +68,8 @@ jobs:
           cd $GITHUB_WORKSPACE/v8
           build/linux/sysroot_scripts/install-sysroot.py --arch=${{ matrix.platform }}
           gn gen out.gn/${{ matrix.platform }}.release
-          gn args --list
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
+          gn args --list
       - name: Compress static library
         run: |
           gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.gz
@@ -126,8 +126,8 @@ jobs:
           cd $GITHUB_WORKSPACE/v8
           build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out.gn/arm64.release
-          gn args --list
           ninja -j 4  v8_monolith -C out.gn/arm64.release/
+          gn args --list
       - name: Compress static library
         run: |
           gzip -9 -c ${{ github.workspace }}/v8/out.gn/arm64.release/obj/libv8_monolith.a > libv8_monolith-linux-arm64.a.gz
@@ -183,8 +183,8 @@ jobs:
           cp args.mac.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
           cd $GITHUB_WORKSPACE/v8
           gn gen out.gn/${{ matrix.platform }}.release
-          gn args --list
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
+          gn args --list
       - name: Compress static library
         run: |
           gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-mac-${{ matrix.platform }}.a.gz
@@ -248,8 +248,8 @@ jobs:
           New-Item -ItemType directory -Path ./out.gn/${{ matrix.platform }}.release/
           Copy-Item "../args.win.${{ matrix.platform }}.gn" -Destination "./out.gn/${{ matrix.platform }}.release/args.gn" -force          
           gn gen out.gn/${{ matrix.platform }}.release
-          gn args --list
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
+          gn args --list
       - name: Compress static library
         shell: pwsh
         run: |
