@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64]
+        platform: [x64,arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -96,7 +96,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-linux-arm:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux-arm
     runs-on: ubuntu-22.04
     strategy:

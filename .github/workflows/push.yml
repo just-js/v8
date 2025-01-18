@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64]
+        platform: [x64,arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -77,8 +77,8 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm:
-#    if: ${{ false }}  # disable
-    name: linux-arm
+    if: ${{ false }}  # disable
+    name: linux-arm64
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
