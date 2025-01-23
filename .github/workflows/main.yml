@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [arm64]
+        platform: [x64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -66,7 +66,6 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cp args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
           cd $GITHUB_WORKSPACE/v8
-#          build/linux/sysroot_scripts/install-sysroot.py --arch=${{ matrix.platform }}
           gn gen out.gn/${{ matrix.platform }}.release
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
@@ -148,7 +147,6 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           cp args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
           cd $GITHUB_WORKSPACE/v8
-#          build/linux/sysroot_scripts/install-sysroot.py --arch=${{ matrix.platform }}
           gn gen out.gn/${{ matrix.platform }}.release
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
