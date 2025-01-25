@@ -416,6 +416,7 @@ jobs:
           New-Item -Path "$sccacheDir" -ItemType Directory -Force
 
           Write-Output "SCCACHE_DIR=$sccacheDir" | Out-File -FilePath "$Env:GITHUB_ENV" -Encoding utf8
+          New-Item -ItemType directory -Path ./out.gn/${{ matrix.platform }}.release/
 
       - name: Restore V8 Cache
         uses: actions/cache@v4
@@ -432,7 +433,6 @@ jobs:
         shell: pwsh
         run: |
           Set-Location -Path v8
-          New-Item -ItemType directory -Path ./out.gn/${{ matrix.platform }}.release/
           Copy-Item "../args.win.${{ matrix.platform }}.gn" -Destination "./out.gn/${{ matrix.platform }}.release/args.gn" -force          
           gn gen out.gn/${{ matrix.platform }}.release
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
