@@ -150,30 +150,6 @@ jobs:
           git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
-      - name: Compress headers
-        run: |
-          tar -zcvf include.tar.gz v8/include
-      - name: Upload headers
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/include.tar.gz
-          asset_name: include.tar.gz
-          asset_content_type: application/gzip
-      - name: Compress source
-        run: |
-          tar -zcvf src.tar.gz v8/src
-      - name: Upload source
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/src.tar.gz
-          asset_name: src.tar.gz
-          asset_content_type: application/gzip
       - name: Restore CCache
         uses: actions/cache@v4
         with:
