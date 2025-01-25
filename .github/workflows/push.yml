@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -111,7 +111,7 @@ jobs:
   build-linux-arm64:
 #    if: ${{ false }}  # disable
     name: linux
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     strategy:
       fail-fast: false
       matrix:
@@ -189,7 +189,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-13
     strategy:
@@ -269,7 +269,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-mac-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-14
     strategy:
@@ -349,7 +349,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-windows:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: windows
     runs-on: windows-latest
     strategy:
