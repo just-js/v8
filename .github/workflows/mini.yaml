@@ -77,7 +77,7 @@ jobs:
         run: |
           tar -zcvf out-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release
       - name: Upload static library
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: out-${{ matrix.platform }}.tar.gz
           name: out-${{ matrix.platform }}.tar.gz
