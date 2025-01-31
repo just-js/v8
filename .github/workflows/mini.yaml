@@ -34,8 +34,8 @@ jobs:
       - name: fetch beta branch
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
           fetch v8
+          cd v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
