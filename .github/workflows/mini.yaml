@@ -1,3 +1,14 @@
+name: test build
+on: [push]
+
+env:
+  V8_VERSION: "13.1"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
   build-linux-x64:
     name: linux
     runs-on: ubuntu-22.04
