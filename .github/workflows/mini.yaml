@@ -19,13 +19,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Restore CCache
-        uses: actions/cache@v4
-        with:
-          path: depot_tools
-          key: ${{ runner.os }}-${{ matrix.platform }}:libv8:depot_tools:${{ github.run_number }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform }}:libv8:depot_tools:
       - name: setup v8 build tools
         run: |
           sudo apt-get update
@@ -38,13 +31,6 @@ jobs:
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
-      - name: Restore CCache
-        uses: actions/cache@v4
-        with:
-          path: v8
-          key: ${{ runner.os }}-${{ matrix.platform }}:libv8:v8_src:${{ github.run_number }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform }}:libv8:v8_src:
       - name: fetch beta branch
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -53,18 +39,6 @@ jobs:
           git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
-      - name: Restore V8 Cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            v8
-            .ccache
-            .gclient_entries
-            .gclient_previous_sync_commits
-            .cipd
-          key: ${{ runner.os }}-${{ matrix.platform }}:libv8:v8:${{ hashFiles('**/VERSION') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform }}:libv8:v8:
       - name: build v8 static library
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
