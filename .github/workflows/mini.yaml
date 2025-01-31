@@ -1,0 +1,72 @@
+  build-linux-x64:
+    name: linux
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Restore CCache
+        uses: actions/cache@v4
+        with:
+          path: depot_tools
+          key: ${{ runner.os }}-${{ matrix.platform }}:libv8:depot_tools:${{ github.run_number }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}:libv8:depot_tools:
+      - name: setup v8 build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -yq ccache
+          sudo update-ccache-symlinks
+          echo "/usr/lib/ccache" >> "$GITHUB_PATH"
+          ccacheDir="${GITHUB_WORKSPACE}/.ccache"
+          test -d "$ccacheDir" || mkdir "$ccacheDir"
+          echo "CCACHE_DIR=$ccacheDir" >> "$GITHUB_ENV"
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+      - name: Restore CCache
+        uses: actions/cache@v4
+        with:
+          path: v8
+          key: ${{ runner.os }}-${{ matrix.platform }}:libv8:v8_src:${{ github.run_number }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}:libv8:v8_src:
+      - name: fetch beta branch
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cd $GITHUB_WORKSPACE/v8
+          fetch v8
+          git checkout branch-heads/$V8_VERSION
+          gclient sync
+          mkdir -p out.gn/${{ matrix.platform }}.release/
+      - name: Restore V8 Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            v8
+            .ccache
+            .gclient_entries
+            .gclient_previous_sync_commits
+            .cipd
+          key: ${{ runner.os }}-${{ matrix.platform }}:libv8:v8:${{ hashFiles('**/VERSION') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}:libv8:v8:
+      - name: build v8 static library
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cp args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
+          cd $GITHUB_WORKSPACE/v8
+          gn gen out.gn/${{ matrix.platform }}.release
+          ninja -j 4 v8_monolith -C out.gn/${{ matrix.platform }}.release/
+          gn args --list out.gn/${{ matrix.platform }}.release
+      - name: Compress static library
+        run: |
+          tar -zcvf out-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release
+      - name: Upload static library
+        uses: actions/upload-artifact@v3
+        with:
+          path: out-${{ matrix.platform }}.tar.gz
+          name: out-${{ matrix.platform }}.tar.gz
