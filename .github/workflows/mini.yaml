@@ -10,7 +10,7 @@ defaults:
 
 jobs:
   build-linux-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
