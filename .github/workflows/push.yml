@@ -34,22 +34,22 @@ jobs:
           git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
-      - name: Compress headers
-        run: |
-          tar -zcvf include.tar.gz v8/include
-      - name: Upload headers
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/include.tar.gz
-          name: include.tar.gz
-      - name: Compress source
-        run: |
-          tar -zcvf src.tar.gz v8/src
-      - name: Upload source
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/src.tar.gz
-          name: src.tar.gz
+#      - name: Compress headers
+#        run: |
+#          tar -zcvf include.tar.gz v8/include
+#      - name: Upload headers
+#        uses: actions/upload-artifact@v4
+#        with:
+#          path: ${{ github.workspace }}/include.tar.gz
+#          name: include.tar.gz
+#      - name: Compress source
+#        run: |
+#          tar -zcvf src.tar.gz v8/src
+#      - name: Upload source
+#        uses: actions/upload-artifact@v4
+#        with:
+#          path: ${{ github.workspace }}/src.tar.gz
+#          name: src.tar.gz
       - name: build v8 static library
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -256,7 +256,6 @@ jobs:
       - name: build v8 static library
         shell: pwsh
         run: |
-          Set-Location -Path v8
           Copy-Item "../args.win.${{ matrix.platform }}.gn" -Destination "./out.gn/${{ matrix.platform }}.release/args.gn" -force          
           gn gen out.gn/${{ matrix.platform }}.release
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
