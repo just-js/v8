@@ -2,7 +2,7 @@ name: build and publish v8 libs
 on: [push]
 
 env:
-  V8_VERSION: "13.1"
+  V8_VERSION: "13.8"
 
 defaults:
   run:
@@ -256,7 +256,7 @@ jobs:
       - name: build v8 static library
         shell: pwsh
         run: |
-          Copy-Item "../args.win.${{ matrix.platform }}.gn" -Destination "./out.gn/${{ matrix.platform }}.release/args.gn" -force          
+          Copy-Item "args.win.${{ matrix.platform }}.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force          
           gn gen out.gn/${{ matrix.platform }}.release
           ninja -j 4  v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
