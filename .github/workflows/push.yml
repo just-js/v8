@@ -21,59 +21,40 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: setup v8 build tools
+      - name: compile v8
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
           fetch v8
-      - name: fetch beta branch
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
+          cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
+          ./build/install-build-deps.sh
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
-      - name: Compress headers
-        run: |
+          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          gn gen out.gn/linux.${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
+          gn args --list out.gn/linux.${{ matrix.platform }}.release
           tar -zcvf include.tar.gz v8/include
+          tar -zcvf src.tar.gz v8/src
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          tar -zcvf ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/gen
       - name: Upload headers
         uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}/include.tar.gz
           name: include.tar.gz
-      - name: Compress source
-        run: |
-          tar -zcvf src.tar.gz v8/src
       - name: Upload source
         uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}/src.tar.gz
           name: src.tar.gz
-      - name: install v8 dependencies
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
-          ./build/install-build-deps.sh
-      - name: build v8 static library
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cp args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
-          cd $GITHUB_WORKSPACE/v8
-          gn gen out.gn/linux.${{ matrix.platform }}.release
-          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
-          gn args --list out.gn/linux.${{ matrix.platform }}.release
-      - name: Compress static library
-        run: |
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.gz
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
-          path: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
           name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
-      - name: Compress generated source
-        run: |
-          tar -zcvf gen-linux-${{ matrix.platform }}.tar.gz v8/out.gn/linux.${{ matrix.platform }}.release/gen
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
@@ -91,43 +72,30 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: setup v8 build tools
+      - name: compile v8
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
           fetch v8
-      - name: fetch beta branch
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
+          cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
-          mkdir -p out.gn/linux.${{ matrix.platform }}.release/
-      - name: install v8 dependencies
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
           ./build/install-build-deps.sh
-      - name: build v8 static library
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cp args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
-          cd $GITHUB_WORKSPACE/v8
+          mkdir -p out.gn/linux.${{ matrix.platform }}.release/
+          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
-      - name: Compress static library
-        run: |
+          tar -zcvf include.tar.gz v8/include
+          tar -zcvf src.tar.gz v8/src
           gzip -9 -c ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          tar -zcvf ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
-          path: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
           name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
-      - name: Compress generated source
-        run: |
-          tar -zcvf gen-linux-${{ matrix.platform }}.tar.gz v8/out.gn/linux.${{ matrix.platform }}.release/gen
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
@@ -135,9 +103,9 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
-    runs-on: macos-13
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
@@ -145,38 +113,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: setup v8 build tools
+      - name: build v8
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
           fetch v8
-      - name: fetch beta branch
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
+          cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
-      - name: build v8 static library
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cp args.mac.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
-          cd $GITHUB_WORKSPACE/v8
+          cp ${{ github.workspace }}/args.mac.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
-      - name: Compress static library
-        run: |
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          tar -zcvf ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
-          path: libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          path: ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
           name: libv8_monolith-mac-${{ matrix.platform }}.a.gz
-      - name: Compress generated source
-        run: |
-          tar -zcvf gen-mac-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
@@ -186,7 +143,7 @@ jobs:
   build-mac-arm64:
 #    if: ${{ false }}  # disable
     name: mac
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
@@ -194,38 +151,27 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: setup v8 build tools
+      - name: build v8
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
           fetch v8
-      - name: fetch beta branch
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cd $GITHUB_WORKSPACE/v8
+          cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
           mkdir -p out.gn/${{ matrix.platform }}.release/
-      - name: build v8 static library
-        run: |
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          cp args.mac.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/${{ matrix.platform }}.release/args.gn
-          cd $GITHUB_WORKSPACE/v8
+          cp ${{ github.workspace }}/args.mac.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
-      - name: Compress static library
-        run: |
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          tar -zcvf ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
-          path: libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          path: ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
           name: libv8_monolith-mac-${{ matrix.platform }}.a.gz
-      - name: Compress generated source
-        run: |
-          tar -zcvf gen-mac-${{ matrix.platform }}.tar.gz v8/out.gn/${{ matrix.platform }}.release/gen
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
@@ -233,7 +179,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-windows:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: windows
     runs-on: windows-latest
     strategy:
