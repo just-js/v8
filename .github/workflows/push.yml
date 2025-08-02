@@ -80,7 +80,7 @@ jobs:
           gclient
           fetch v8
           cd ${{ github.workspace }}/v8
-          git checkout branch-heads/$V8_VERSION
+          git checkout branch-heads/13.8
           gclient sync
           ./build/install-build-deps.sh
           ./tools/clang/scripts/build.py --without-android --without-fuchsia --host-cc=gcc --host-cxx=g++ --use-system-cmake --disable-asserts          
