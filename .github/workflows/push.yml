@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -76,6 +76,7 @@ jobs:
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           gclient
           fetch v8
           cd ${{ github.workspace }}/v8
@@ -102,7 +103,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
@@ -142,7 +143,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-mac-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
