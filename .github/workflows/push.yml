@@ -2,7 +2,7 @@ name: build and publish v8 libs
 on: [push]
 
 env:
-  V8_VERSION: "13.8"
+  V8_VERSION: "13.9"
 
 defaults:
   run:
@@ -50,6 +50,11 @@ jobs:
         with:
           path: ${{ github.workspace }}/src.tar.gz
           name: src.tar.gz
+      - name: install v8 dependencies
+        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          cd $GITHUB_WORKSPACE/v8
+          ./build/install-build-deps.sh
       - name: build v8 static library
         run: |
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -76,7 +81,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04-arm
     strategy:
@@ -125,7 +130,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-13
     strategy:
@@ -174,7 +179,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-mac-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-14
     strategy:
@@ -223,7 +228,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-windows:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: windows
     runs-on: windows-latest
     strategy:
