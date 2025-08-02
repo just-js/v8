@@ -109,47 +109,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: build v8
-        run: |
-          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          gclient
-          fetch v8
-          cd ${{ github.workspace }}/v8
-          git checkout branch-heads/$V8_VERSION
-          gclient sync
-          mkdir -p out.gn/${{ matrix.platform }}.release/
-          cp ${{ github.workspace }}/args.mac.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn
-          gn gen out.gn/${{ matrix.platform }}.release
-          cp ../macos_atomics_unimplemented.patch ./
-          git apply -v macos_atomics_unimplemented.patch
-          ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
-          gn args --list out.gn/${{ matrix.platform }}.release
-          gzip -9 -c out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-mac-${{ matrix.platform }}.a.gz
-          tar -zcvf ../gen-mac-${{ matrix.platform }}.tar.gz out.gn/${{ matrix.platform }}.release/gen
-      - name: Upload static library
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
-          name: libv8_monolith-mac-${{ matrix.platform }}.a.gz
-      - name: Upload generated source
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz
-          name: gen-mac-${{ matrix.platform }}.tar.gz
-
-  build-mac-arm64:
-#    if: ${{ false }}  # disable
-    name: mac
-    runs-on: macos-15
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [arm64]
+        platform: [x64,arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

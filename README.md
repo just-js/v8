@@ -60,3 +60,7 @@ A build of the v8 monolithic library
 - https://v8.dev/docs/compile-arm64
 - https://v8.dev/docs/build
 - https://v8.dev/docs/build-gn
+
+## release schedule
+
+- https://chromiumdash.appspot.com/schedule
