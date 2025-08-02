@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux-x64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -36,10 +36,10 @@ jobs:
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
-          tar -zcvf include.tar.gz v8/include
-          tar -zcvf src.tar.gz v8/src
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.gz
-          tar -zcvf ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/gen
+          tar -zcvf ../include.tar.gz include
+          tar -zcvf ../src.tar.gz src
+          gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
       - name: Upload headers
         uses: actions/upload-artifact@v4
         with:
@@ -88,10 +88,8 @@ jobs:
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
-          tar -zcvf include.tar.gz v8/include
-          tar -zcvf src.tar.gz v8/src
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > libv8_monolith-linux-${{ matrix.platform }}.a.gz
-          tar -zcvf ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/gen
+          gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
@@ -104,7 +102,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac-x64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
@@ -126,10 +124,12 @@ jobs:
           mkdir -p out.gn/${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.mac.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn
           gn gen out.gn/${{ matrix.platform }}.release
+          cp ../macos_atomics_unimplemented.patch ./
+          git apply -v macos_atomics_unimplemented.patch
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
-          tar -zcvf ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen
+          gzip -9 -c out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-mac-${{ matrix.platform }}.tar.gz out.gn/${{ matrix.platform }}.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
@@ -142,7 +142,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-mac-arm64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
@@ -164,10 +164,12 @@ jobs:
           mkdir -p out.gn/${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.mac.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn
           gn gen out.gn/${{ matrix.platform }}.release
+          cp ../macos_atomics_unimplemented.patch ./
+          git apply -v macos_atomics_unimplemented.patch
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
-          gzip -9 -c ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
-          tar -zcvf ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen
+          gzip -9 -c out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-mac-${{ matrix.platform }}.tar.gz out.gn/${{ matrix.platform }}.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
