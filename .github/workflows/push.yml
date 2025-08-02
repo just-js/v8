@@ -2,7 +2,7 @@ name: build and publish v8 libs
 on: [push]
 
 env:
-  V8_VERSION: "13.9"
+  V8_VERSION: "13.8"
 
 defaults:
   run:
@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux-x64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -62,7 +62,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04-arm
     strategy:
@@ -80,7 +80,7 @@ jobs:
           gclient
           fetch v8
           cd ${{ github.workspace }}/v8
-          git checkout branch-heads/13.8
+          git checkout branch-heads/$V8_VERSION
           gclient sync
           ./build/install-build-deps.sh
           ./tools/clang/scripts/build.py --without-android --without-fuchsia --host-cc=gcc --host-cxx=g++ --use-system-cmake --disable-asserts          
@@ -103,7 +103,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac-x64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
@@ -143,7 +143,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-mac-arm64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
