@@ -74,7 +74,7 @@ jobs:
         uses: actions/checkout@v3
       - name: compile v8
         run: |
-          apt install -y libpcre3
+          sudo apt install -y libpcre3
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
