@@ -64,3 +64,15 @@ A build of the v8 monolithic library
 ## release schedule
 
 - https://chromiumdash.appspot.com/schedule
+
+## github actions images
+
+- https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/macos/macos-14-arm64-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/windows/Windows2019-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md
+- https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md

@@ -10,8 +10,59 @@ defaults:
 
 jobs:
 
+  build-linux-x64-clang:
+#    if: ${{ false }}  # disable
+    name: linux
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: compile v8
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+          fetch v8
+          cd ${{ github.workspace }}/v8
+          git checkout branch-heads/$V8_VERSION
+          gclient sync
+          ./build/install-build-deps.sh
+          mkdir -p out.gn/linux.${{ matrix.platform }}.release/
+          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.clang.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          gn gen out.gn/linux.${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
+          gn args --list out.gn/linux.${{ matrix.platform }}.release
+          tar -zcvf ../include.tar.gz include
+          tar -zcvf ../src.tar.gz src
+          gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
+      - name: Upload headers
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/include.tar.gz
+          name: include.tar.gz
+      - name: Upload source
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/src.tar.gz
+          name: src.tar.gz
+      - name: Upload static library
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          name: libv8_monolith-linux-${{ matrix.platform }}.clang.a.gz
+      - name: Upload generated source
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
+          name: gen-linux-${{ matrix.platform }}.clang.tar.gz
+
   build-linux-x64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -62,7 +113,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm64-clang:
-    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable - cannot get this to work on github actions
     name: linux
     runs-on: ubuntu-22.04-arm
     strategy:
@@ -86,7 +137,7 @@ jobs:
           ./build/install-build-deps.sh
           ./tools/clang/scripts/build.py --without-android --without-fuchsia --host-cc=gcc --host-cxx=g++ --use-system-cmake --disable-asserts          
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
-          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.clang.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
@@ -96,12 +147,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
-          name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          name: libv8_monolith-linux-${{ matrix.platform }}.clang.a.gz
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
-          name: gen-linux-${{ matrix.platform }}.tar.gz
+          name: gen-linux-${{ matrix.platform }}.clang.tar.gz
 
   build-linux-arm64:
 #    if: ${{ false }}  # disable
@@ -142,46 +193,8 @@ jobs:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
-  test-mac-14-sdks:
-    if: ${{ false }}  # disable
-    name: mac
-    runs-on: macos-14
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [x64,arm64]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: build v8
-        run: |
-          ls -lah /Applications/Xcode_16.2.app/Contents/
-          ls -lah /Applications/Xcode_16.2.app/Contents/Developer/
-          ls -lah /Applications/Xcode_16.2.app/Contents/Developer/Platforms/
-          ls -lah /Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/
-          ls -lah /Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
-
-  test-mac-15-sdks:
-    if: ${{ false }}  # disable
-    name: mac
-    runs-on: macos-15
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [x64,arm64]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: build v8
-        run: |
-          ls -lah /Applications/Xcode_16.4.app/Contents/
-          ls -lah /Applications/Xcode_16.4.app/Contents/Developer/
-          ls -lah /Applications/Xcode_16.4.app/Contents/Developer/Platforms/
-          ls -lah /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/
-          ls -lah /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
-
   build-mac:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
@@ -218,8 +231,8 @@ jobs:
           path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
-  build-windows:
-    if: ${{ false }}  # disable
+  build-windows-clang:
+#    if: ${{ false }}  # disable
     name: windows
     runs-on: windows-latest
     strategy:
@@ -229,48 +242,59 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Setup python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.10
-      - name: Install MSVC/MCBuild (Windows)
-        uses: microsoft/setup-msbuild@v1.0.2
-      - name: setup v8 build tools
-        shell: pwsh
+      - name: build v8
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: fetch v8 source
-        run: |
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           export DEPOT_TOOLS_WIN_TOOLCHAIN=0
           gclient
           fetch v8
-          cd v8
+          cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
-      - name: build v8 static library
-        shell: pwsh
-        run: |
-          Copy-Item "args.win.${{ matrix.platform }}.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force          
+          Copy-Item "args.win.${{ matrix.platform }}.clang.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
-      - name: Compress static library
-        shell: pwsh
-        run: |
-          Compress-Archive -Path v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination libv8_monolith-win-${{ matrix.platform }}.zip
+          Compress-Archive -Path out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination ../libv8_monolith-win-${{ matrix.platform }}.zip
+          Compress-Archive -Path out.gn/${{ matrix.platform }}.release/gen -Destination ../gen-win-${{ matrix.platform }}.zip
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
-          path: libv8_monolith-win-${{ matrix.platform }}.zip
-          name: libv8_monolith-win-${{ matrix.platform }}.zip
-      - name: Compress generated source
-        shell: pwsh
-        run: |
-          Compress-Archive -Path v8/out.gn/${{ matrix.platform }}.release/gen -Destination gen-win-${{ matrix.platform }}.zip
+          path: ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}.zip
+          name: libv8_monolith-win-${{ matrix.platform }}.clang.zip
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
           path: ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
-          name: gen-win-${{ matrix.platform }}.zip
+          name: gen-win-${{ matrix.platform }}.clang.zip
+
+  test-mac-14-sdks:
+    if: ${{ false }}  # disable
+    name: mac
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64,arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: build v8
+        run: |
+          ls -lah /Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
+
+  test-mac-15-sdks:
+    if: ${{ false }}  # disable
+    name: mac
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64,arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: build v8
+        run: |
+          ls -lah /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/
