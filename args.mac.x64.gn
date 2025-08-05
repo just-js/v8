@@ -26,4 +26,5 @@ v8_enable_i18n_support=false
 v8_enable_pointer_compression=false
 v8_enable_sandbox=false
 v8_enable_test_features=false
-mac_sdk_path="/Applications/Xcode_15.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.4.sdk"
+mac_sdk_path="/Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk"
+#mac_sdk_path="/Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
