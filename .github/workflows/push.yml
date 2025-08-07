@@ -233,23 +233,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: build v8
+      - name: setup env
         shell: pwsh
         run: |
-          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "${{ github.workspace }}/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: build v8
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           gclient
           fetch v8
+          mkdir "${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release"
+          copy "args.win.${{ matrix.platform }}.clang.gn" "${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn"
           cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
-          Copy-Item "args.win.${{ matrix.platform }}.clang.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
-          Compress-Archive -Path out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination ../libv8_monolith-win-${{ matrix.platform }}.zip
-          Compress-Archive -Path out.gn/${{ matrix.platform }}.release/gen -Destination ../gen-win-${{ matrix.platform }}.zip
+      - name: compress artifacts
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}.zip
+          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen -Destination ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
