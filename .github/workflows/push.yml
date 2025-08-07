@@ -143,7 +143,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.clang.tar.gz
 
   build-linux-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04-arm
     strategy:
@@ -234,6 +234,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: build v8
+        shell: pwsh
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
