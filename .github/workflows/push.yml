@@ -243,7 +243,8 @@ jobs:
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           gclient
           fetch v8
-          mkdir "${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release"
+          mkdir "${{ github.workspace }}\v8\out.gn"
+          mkdir "${{ github.workspace }}\v8\out.gn\${{ matrix.platform }}.release"
           copy "args.win.${{ matrix.platform }}.clang.gn" "${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn"
           cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
