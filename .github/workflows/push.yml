@@ -11,7 +11,7 @@ defaults:
 jobs:
 
   build-linux-x64-clang:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -36,20 +36,8 @@ jobs:
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
-          tar -zcvf ../include.tar.gz include
-          tar -zcvf ../src.tar.gz src
           gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
           tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
-      - name: Upload headers
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/include.tar.gz
-          name: include.tar.gz
-      - name: Upload source
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/src.tar.gz
-          name: src.tar.gz
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
@@ -62,7 +50,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.clang.tar.gz
 
   build-linux-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -158,6 +146,10 @@ jobs:
 #    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04-arm
+    include:
+      - runs-on: ubuntu-22.04-arm
+        compiler: gcc
+        gcc: 12
     strategy:
       fail-fast: false
       matrix:
@@ -166,6 +158,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: compile v8
+        env:
+          CC: gcc-${{ matrix.gcc }}
+          CXX: g++-${{ matrix.gcc }}
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
@@ -194,7 +189,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
@@ -245,8 +240,8 @@ jobs:
       - name: build v8
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          export DEPOT_TOOLS_WIN_TOOLCHAIN=0
+          echo "$pwd/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           gclient
           fetch v8
           cd ${{ github.workspace }}/v8
