@@ -239,7 +239,7 @@ jobs:
           echo "${{ github.workspace }}/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: build v8
-        shell: bash
+        shell: cmd
         run: |
           git config --global depot-tools.allowGlobalGitConfig true
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
