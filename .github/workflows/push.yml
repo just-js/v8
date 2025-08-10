@@ -252,7 +252,8 @@ jobs:
           cd v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
-          git apply -v ../msvc.patch
+          cp ../msvc.patch ./
+          git apply -v msvc.patch
       - name: compile v8 static library
         shell: pwsh
         run: |
