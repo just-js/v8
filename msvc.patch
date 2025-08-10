@@ -1,0 +1,28 @@
+diff --git a/BUILD.gn b/BUILD.gn
+index f2f72a02c61..00a96aa8054 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -1710,15 +1710,15 @@ config("toolchain") {
+     }
+   }
+ 
+-  cflags += [
+-    # Disable warnings about offsetof being used on non-standard-layout types.
+-    # offsetof is only specified for standard-layout types, but its behaviour
+-    # on non-standard-layout types is implementation defined (rather than UB),
+-    # and our supported compilers have the expected reasonable behaviour.
+-    "-Wno-invalid-offsetof",
+-  ]
+-
+   if (!is_clang) {
++    cflags += [
++      # Disable warnings about offsetof being used on non-standard-layout types.
++      # offsetof is only specified for standard-layout types, but its behaviour
++      # on non-standard-layout types is implementation defined (rather than UB),
++      # and our supported compilers have the expected reasonable behaviour.
++      "-Wno-invalid-offsetof",
++    ]
++
+     cflags += [
+       # Disable gcc warnings for optimizations based on the assumption that
+       # signed overflow does not occur. Generates false positives (see
