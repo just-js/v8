@@ -158,8 +158,6 @@ jobs:
           CC: gcc-13
           CXX: g++-13
         run: |
-          export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
-          pip3 install --upgrade six
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
@@ -168,6 +166,7 @@ jobs:
           git checkout branch-heads/$V8_VERSION
           gclient sync
           ./build/install-build-deps.sh
+          pip install --upgrade six
           ./tools/clang/scripts/build.py --without-android --without-fuchsia --host-cc=gcc-13 --host-cxx=g++-13 --use-system-cmake --disable-asserts
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.clang.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
