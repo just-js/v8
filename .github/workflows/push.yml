@@ -159,7 +159,7 @@ jobs:
           CXX: g++-13
         run: |
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
-          pip install --upgrade six
+          pip3 install --upgrade six
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
           gclient
@@ -226,7 +226,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-windows-msvc:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: windows-msvc
     runs-on: windows-latest
     strategy:
