@@ -101,7 +101,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.clang.tar.gz
 
   build-linux-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux-gcc
     runs-on: ubuntu-24.04-arm
     strategy:
@@ -161,7 +161,6 @@ jobs:
           pip install --upgrade six
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
-          export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           gclient
           fetch v8
           cd ${{ github.workspace }}/v8
@@ -236,6 +235,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
       - name: setup env
         shell: pwsh
         run: |
@@ -327,7 +330,7 @@ jobs:
 
   test-mac-14-sdks:
     if: ${{ false }}  # disable
-    name: mac
+    name: test-mac-14-sdks
     runs-on: macos-14
     strategy:
       fail-fast: false
@@ -342,7 +345,7 @@ jobs:
 
   test-mac-15-sdks:
     if: ${{ false }}  # disable
-    name: mac
+    name: test-mac-15-sdks
     runs-on: macos-15
     strategy:
       fail-fast: false
