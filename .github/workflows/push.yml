@@ -143,13 +143,13 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm64-clang:
-    if: ${{ false }}  # disable - cannot get this to work on github actions
+#    if: ${{ false }}  # disable - cannot get this to work on github actions
     name: linux-clang
     runs-on: ubuntu-22.04-arm
     strategy:
       fail-fast: false
       matrix:
-        platform: [arm64]
+        platform: [x64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -166,23 +166,23 @@ jobs:
           git checkout branch-heads/$V8_VERSION
           gclient sync
           ./build/install-build-deps.sh
-          mkdir -p out.gn/linux.${{ matrix.platform }}.release/
-          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.clang.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
-          gn gen out.gn/linux.${{ matrix.platform }}.release
-          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
-          gn args --list out.gn/linux.${{ matrix.platform }}.release
-          gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
-          tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
+          mkdir -p out.gn/linux.arm64.release/
+          cp ${{ github.workspace }}/args.linux.arm64.clang.gn $GITHUB_WORKSPACE/v8/out.gn/linux.arm64.release/args.gn
+          gn gen out.gn/linux.arm64.release
+          ninja v8_monolith -C out.gn/linux.arm64.release/
+          gn args --list out.gn/linux.arm64.release
+          gzip -9 -c out.gn/linux.arm64.release/obj/libv8_monolith.a > ../libv8_monolith-linux-arm64.a.gz
+          tar -zcvf ../gen-linux-arm64.tar.gz out.gn/linux.arm64.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
-          name: libv8_monolith-linux-${{ matrix.platform }}.clang.a.gz
+          path: ${{ github.workspace }}/libv8_monolith-linux-arm64.a.gz
+          name: libv8_monolith-linux-arm64.clang.a.gz
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
-          name: gen-linux-${{ matrix.platform }}.clang.tar.gz
+          path: ${{ github.workspace }}/gen-linux-arm64.tar.gz
+          name: gen-linux-arm64.clang.tar.gz
 
   build-mac:
     if: ${{ false }}  # disable
@@ -223,7 +223,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-windows-msvc:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: windows-msvc
     runs-on: windows-latest
     strategy:
