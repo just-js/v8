@@ -101,7 +101,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.clang.tar.gz
 
   build-linux-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux-gcc
     runs-on: ubuntu-24.04-arm
     strategy:
@@ -223,7 +223,7 @@ jobs:
           name: gen-mac-${{ matrix.platform }}.tar.gz
 
   build-windows-msvc:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: windows-msvc
     runs-on: windows-latest
     strategy:
@@ -286,7 +286,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64,arm64]
+        platform: [x64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
