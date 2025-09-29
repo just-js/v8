@@ -5,7 +5,7 @@ on:
       - published
 
 env:
-  V8_VERSION: "14.0"
+  V8_VERSION: "14.1"
 
 defaults:
   run:
@@ -81,7 +81,7 @@ jobs:
           asset_content_type: application/gzip
 
   build-linux-clang:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux-clang
     runs-on: ubuntu-22.04
     strategy:
