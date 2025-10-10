@@ -62,7 +62,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-x64-clang:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux-clang
     runs-on: ubuntu-24.04
     strategy:
@@ -101,7 +101,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.clang.tar.gz
 
   build-linux-arm64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux-gcc
     runs-on: ubuntu-24.04-arm
     strategy:
@@ -143,20 +143,17 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm64-clang:
-    if: ${{ false }}  # disable - cannot get this to work on github actions
+#    if: ${{ false }}  # disable - cannot get this to work on github actions
     name: linux-clang
     runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64]
+        platform: [arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: compile v8
-        env:
-          CC: gcc-13
-          CXX: g++-13
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
