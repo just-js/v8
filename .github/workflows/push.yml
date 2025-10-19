@@ -12,8 +12,8 @@ jobs:
 
   build-linux-x64:
 #    if: ${{ false }}  # disable
-    name: linux-gcc
-    runs-on: ubuntu-24.04
+    name: linux
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -65,7 +65,7 @@ jobs:
   build-linux-arm64:
 #    if: ${{ false }}  # disable
     name: linux
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     strategy:
       fail-fast: false
       matrix:
