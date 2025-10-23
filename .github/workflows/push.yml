@@ -86,7 +86,7 @@ jobs:
           ./build/install-build-deps.sh
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
-          build/linux/sysroot_scripts/install-sysroot.py --arch=aarch64
+          build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
