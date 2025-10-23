@@ -62,7 +62,7 @@ jobs:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
           name: gen-linux-${{ matrix.platform }}.${{ matrix.compiler }}.tar.gz
 
-  build-linux-arm64:
+  build-linux-arm64-gcc:
 #    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04-arm
@@ -103,7 +103,7 @@ jobs:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
           name: gen-linux-${{ matrix.platform }}.${{ matrix.compiler }}.tar.gz
 
-  build-linux-arm64:
+  build-linux-arm64-clang:
 #    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04-arm
