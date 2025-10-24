@@ -75,6 +75,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: compile v8
+        env:
+          CC: gcc-13
+          CXX: g++-13
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="${PATH}:$GITHUB_WORKSPACE/depot_tools"
@@ -119,6 +122,7 @@ jobs:
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="${PATH}:$GITHUB_WORKSPACE/depot_tools"
+          export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           gclient
           fetch v8
           cd ${{ github.workspace }}/v8
