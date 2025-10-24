@@ -85,6 +85,7 @@ jobs:
           fetch v8
           cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
+          pip install --upgrade six
           gclient sync
           ./build/install-build-deps.sh
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
