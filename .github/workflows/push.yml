@@ -130,9 +130,9 @@ jobs:
           fetch v8
           cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
-          pip install --upgrade six
           gclient sync
           ./build/install-build-deps.sh
+          pip install --upgrade six
           ./tools/clang/scripts/build.py --without-android --without-fuchsia --host-cc=gcc-13 --host-cxx=g++-13 --use-system-cmake --disable-asserts
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
