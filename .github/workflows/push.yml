@@ -119,9 +119,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: compile v8
-        env:
-          CC: gcc-13
-          CXX: g++-13
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="${PATH}:$GITHUB_WORKSPACE/depot_tools"
@@ -133,7 +130,7 @@ jobs:
           ./build/install-build-deps.sh
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           pip install --upgrade six tensorflow
-          ./tools/clang/scripts/build.py --without-android --without-fuchsia --host-cc=gcc-13 --host-cxx=g++-13 --use-system-cmake --disable-asserts
+          ./tools/clang/scripts/build.py --without-android --without-fuchsia --use-system-cmake --disable-asserts
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
