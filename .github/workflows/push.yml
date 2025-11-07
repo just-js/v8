@@ -63,7 +63,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.${{ matrix.compiler }}.tar.gz
 
   build-linux-arm64-gcc:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04-arm
     strategy:
