@@ -63,7 +63,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.${{ matrix.compiler }}.tar.gz
 
   build-linux-arm64-gcc:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04-arm
     strategy:
@@ -86,6 +86,8 @@ jobs:
           cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
+          cp ../gcc-arm64.patch ./
+          git apply -v gcc-arm64.patch
           ./build/install-build-deps.sh
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
@@ -130,7 +132,7 @@ jobs:
           ./build/install-build-deps.sh
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           pip install --upgrade six tensorflow
-          ./tools/clang/scripts/build.py --without-android --without-fuchsia --use-system-cmake --disable-asserts
+          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --without-fuchsia --use-system-cmake --disable-asserts
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
