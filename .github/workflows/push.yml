@@ -86,8 +86,8 @@ jobs:
           cd ${{ github.workspace }}/v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
-          cp ../gcc-arm64.patch ./
-          git apply -v gcc-arm64.patch
+          #cp ../gcc-arm64.patch ./
+          #git apply -v gcc-arm64.patch
           ./build/install-build-deps.sh
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
