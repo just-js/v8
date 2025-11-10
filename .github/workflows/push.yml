@@ -65,11 +65,11 @@ jobs:
   build-linux-arm64-gcc:
 #    if: ${{ false }}  # disable
     name: linux
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        platform: [arm64]
+        platform: [x64]
         compiler: [gcc]
     steps:
       - name: Checkout code
@@ -121,6 +121,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: compile v8
+        env:
+          CC: gcc-13
+          CXX: g++-13
         run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           export PATH="${PATH}:$GITHUB_WORKSPACE/depot_tools"
