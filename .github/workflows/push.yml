@@ -10,7 +10,7 @@ defaults:
 
 jobs:
 
-  build-linux-x64:
+  build-linux-x64-clang:
 #    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04
@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [x64]
-        compiler: [clang,gcc]
+        compiler: [clang]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -62,54 +62,8 @@ jobs:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
           name: gen-linux-${{ matrix.platform }}.${{ matrix.compiler }}.tar.gz
 
-  build-linux-arm64:
-#    if: ${{ false }}  # disable
-    name: linux
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [x64]
-        compiler: [gcc,clang]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: compile v8
-        env:
-          CC: gcc-13
-          CXX: g++-13
-        run: |
-          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-          export PATH="${PATH}:$GITHUB_WORKSPACE/depot_tools"
-          gclient
-          fetch v8
-          cd ${{ github.workspace }}/v8
-          git checkout branch-heads/$V8_VERSION
-          gclient sync
-          #cp ../gcc-arm64.patch ./
-          #git apply -v gcc-arm64.patch
-          ./build/install-build-deps.sh
-          mkdir -p out.gn/linux.arm64.release/
-          cp ${{ github.workspace }}/args.linux.arm64.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.arm64.release/args.gn
-          ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
-          gn gen out.gn/linux.arm64.release
-          ninja v8_monolith -C out.gn/linux.arm64.release/
-          gn args --list out.gn/linux.arm64.release
-          gzip -9 -c out.gn/linux.arm64.release/obj/libv8_monolith.a > ../libv8_monolith-linux-arm64.a.gz
-          tar -zcvf ../gen-linux-arm64.tar.gz out.gn/linux.arm64.release/gen
-      - name: Upload static library
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/libv8_monolith-linux-arm64.a.gz
-          name: libv8_monolith-linux-arm64.${{ matrix.compiler }}.a.gz
-      - name: Upload generated source
-        uses: actions/upload-artifact@v4
-        with:
-          path: ${{ github.workspace }}/gen-linux-arm64.tar.gz
-          name: gen-linux-arm64.${{ matrix.compiler }}.tar.gz
-
   build-linux-arm64-clang:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04-arm
     strategy:
