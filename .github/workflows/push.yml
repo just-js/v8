@@ -62,7 +62,7 @@ jobs:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
           name: gen-linux-${{ matrix.platform }}.${{ matrix.compiler }}.tar.gz
 
-  build-linux-arm64-gcc:
+  build-linux-arm64:
 #    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04
@@ -70,7 +70,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [x64]
-        compiler: [gcc]
+        compiler: [gcc,clang]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -89,27 +89,27 @@ jobs:
           #cp ../gcc-arm64.patch ./
           #git apply -v gcc-arm64.patch
           ./build/install-build-deps.sh
-          mkdir -p out.gn/linux.${{ matrix.platform }}.release/
-          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          mkdir -p out.gn/linux.arm64.release/
+          cp ${{ github.workspace }}/args.linux.arm64.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.arm64.release/args.gn
           ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
-          gn gen out.gn/linux.${{ matrix.platform }}.release
-          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
-          gn args --list out.gn/linux.${{ matrix.platform }}.release
-          gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
-          tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
+          gn gen out.gn/linux.arm64.release
+          ninja v8_monolith -C out.gn/linux.arm64.release/
+          gn args --list out.gn/linux.arm64.release
+          gzip -9 -c out.gn/linux.arm64.release/obj/libv8_monolith.a > ../libv8_monolith-linux-arm64.a.gz
+          tar -zcvf ../gen-linux-arm64.tar.gz out.gn/linux.arm64.release/gen
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
-          name: libv8_monolith-linux-${{ matrix.platform }}.${{ matrix.compiler }}.a.gz
+          path: ${{ github.workspace }}/libv8_monolith-linux-arm64.a.gz
+          name: libv8_monolith-linux-arm64.${{ matrix.compiler }}.a.gz
       - name: Upload generated source
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
-          name: gen-linux-${{ matrix.platform }}.${{ matrix.compiler }}.tar.gz
+          path: ${{ github.workspace }}/gen-linux-arm64.tar.gz
+          name: gen-linux-arm64.${{ matrix.compiler }}.tar.gz
 
   build-linux-arm64-clang:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-24.04-arm
     strategy:

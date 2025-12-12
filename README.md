@@ -1,23 +1,16 @@
 # v8 monolithic library builds
 
-this repo containes up-to-date builds of the google v8 static libraries for the following platforms
+this repo containes up-to-date builds of the google v8 monolithic libraries for the following platforms
 
-- linux (x64) - tested on ubunutu 22.04
-- linux (arm64) - tested on raspberry pi 3b+ raspbian(debian 12/bookworm)
-- macos (x64)
-- macos (arm64)
-- windows (x64)
+contributions are welcome!
 
 # current release
 
-https://github.com/just-js/v8/releases/tag/14.2
-
+- [tag](https://github.com/just-js/v8/releases/tag/14.2)
 - [v8 headers](https://github.com/just-js/v8/releases/download/14.2/include.tar.gz)
 - [v8 source](https://github.com/just-js/v8/releases/download/14.2/src.tar.gz)
 
 ## linux x64 (gcc) ✅
-
-A build of the v8 monolithic library for x64 using gcc
 
 - [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-linux-x64.a.gz)
 - [build args](args.linux.x64.gcc.gn)
@@ -25,15 +18,11 @@ A build of the v8 monolithic library for x64 using gcc
 
 ## linux x64 (clang) ❌
 
-A build of the v8 monolithic library for x64 using clang
-
 - [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-linux-x64-clang.a.gz)
 - [build args](args.linux.x64.clang.gn)
 - [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-linux-x64-clang.tar.gz)
 
 ## linux arm64 (gcc) ❌
-
-A build of the v8 monolithic library for arm64 using gcc
 
 - [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-linux-arm64.a.gz)
 - [build args](args.linux.arm64.gcc.gn)
@@ -41,35 +30,33 @@ A build of the v8 monolithic library for arm64 using gcc
 
 ## linux arm64 (clang) ❌
 
-A build of the v8 monolithic library for arm64 using clang
-
 - [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-linux-arm64-clang.a.gz)
 - [build args](args.linux.arm64.clang.gn)
 - [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-linux-arm64-clang.tar.gz)
 
-## macos x64
-
-A build of the v8 monolithic library for macos x64 using clang
+## macos x64 ✅
 
 - [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-mac-x64.a.gz)
 - [build args](args.mac.x64.gn)
 - [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-mac-x64.tar.gz)
 
-## macos arm64
-
-A build of the v8 monolithic library macos arm64 using clang
+## macos arm64 ✅
 
 - [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-mac-arm64.a.gz)
 - [build args](args.mac.arm64.gn)
 - [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-mac-arm64.tar.gz)
 
-## windows x64
-
-A build of the v8 monolithic library for windows x64 using clang
+## windows x64 ✅
 
 - [static library](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-win-x64.zip)
 - [build args](args.win.x64.gn)
 - [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-win-x64.zip)
+
+## planned
+
+- riscv64
+- android64
+- iOS
 
 ## docs
 
