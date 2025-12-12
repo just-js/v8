@@ -21,7 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         platform: [x64]
-        compiler: [clang]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -36,7 +35,7 @@ jobs:
           gclient sync
           ./build/install-build-deps.sh
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
-          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.${{ matrix.compiler }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
@@ -156,7 +155,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType directory -Path v8/out.gn/${{ matrix.platform }}.release/
-          Copy-Item "args.win.${{ matrix.platform }}.clang.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force
+          Copy-Item "args.win.${{ matrix.platform }}.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force
           Set-Location -Path v8
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
