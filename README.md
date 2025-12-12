@@ -6,39 +6,39 @@ contributions are welcome!
 
 # current release
 
-- [tag](https://github.com/just-js/v8/releases/tag/14.2)
-- [v8 headers](https://github.com/just-js/v8/releases/download/14.2/include.tar.gz)
-- [v8 source](https://github.com/just-js/v8/releases/download/14.2/src.tar.gz)
+- [tag](https://github.com/just-js/v8/releases/tag/14.3)
+- [v8 headers](https://github.com/just-js/v8/releases/download/14.3/include.tar.gz)
+- [v8 source](https://github.com/just-js/v8/releases/download/14.3/src.tar.gz)
 
 ## linux x64 ✅
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-linux-x64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/14.3/libv8_monolith-linux-x64.a.gz)
 - [build args](args.linux.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-linux-x64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/14.3/gen-linux-x64.tar.gz)
 
 ## linux arm64 ❌
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-linux-arm64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/14.3/libv8_monolith-linux-arm64.a.gz)
 - [build args](args.linux.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-linux-arm64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/14.3/gen-linux-arm64.tar.gz)
 
 ## macos x64 ✅
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-mac-x64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/14.3/libv8_monolith-mac-x64.a.gz)
 - [build args](args.mac.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-mac-x64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/14.3/gen-mac-x64.tar.gz)
 
 ## macos arm64 ✅
 
-- [static libraries](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-mac-arm64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/14.3/libv8_monolith-mac-arm64.a.gz)
 - [build args](args.mac.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-mac-arm64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/14.3/gen-mac-arm64.tar.gz)
 
 ## windows x64 ✅
 
-- [static library](https://github.com/just-js/v8/releases/download/14.2/libv8_monolith-win-x64.zip)
+- [static library](https://github.com/just-js/v8/releases/download/14.3/libv8_monolith-win-x64.zip)
 - [build args](args.win.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/14.2/gen-win-x64.zip)
+- [generated source code](https://github.com/just-js/v8/releases/download/14.3/gen-win-x64.zip)
 
 ## planned
 
