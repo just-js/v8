@@ -5,7 +5,7 @@ on:
       - published
 
 env:
-  V8_VERSION: "14.3"
+  V8_VERSION: "14.2"
 
 defaults:
   run:
@@ -16,7 +16,7 @@ jobs:
   build-linux:
 #    if: ${{ false }}  # disable
     name: linux
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:

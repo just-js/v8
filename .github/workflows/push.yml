@@ -2,7 +2,7 @@ name: build and publish v8 libs
 on: [push]
 
 env:
-  V8_VERSION: "14.3"
+  V8_VERSION: "14.2"
 
 defaults:
   run:
@@ -64,7 +64,7 @@ jobs:
   build-linux-arm64:
     if: ${{ false }}  # disable
     name: linux
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     strategy:
       fail-fast: false
       matrix:
