@@ -152,7 +152,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64]
+        platform: [x64,arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
