@@ -87,7 +87,7 @@ jobs:
           ./build/install-build-deps.sh
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           pip install --upgrade six tensorflow
-          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --gcc-toolchain=/usr --without-fuchsia --use-system-cmake --disable-asserts
+          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [x64,arm64]
+        platform: [x64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
