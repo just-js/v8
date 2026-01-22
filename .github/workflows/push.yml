@@ -2,7 +2,7 @@ name: build and publish v8 libs
 on: [push]
 
 env:
-  V8_VERSION: "14.3"
+  V8_VERSION: "14.4"
 
 defaults:
   run:
@@ -62,7 +62,7 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm64:
-    if: ${{ false }}  # disable
+#    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04-arm
     strategy:
@@ -87,10 +87,9 @@ jobs:
           ./build/install-build-deps.sh
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           pip install --upgrade six tensorflow
-          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --without-fuchsia --use-system-cmake --disable-asserts
+          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --gcc-toolchain=/usr --without-fuchsia --use-system-cmake --disable-asserts
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
-          ./build/linux/sysroot_scripts/install-sysroot.py --arch=arm64
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
