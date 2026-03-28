@@ -27,3 +27,4 @@ v8_target_cpu="arm64"
 v8_use_external_startup_data=false
 use_lld=false
 use_gold=false
+v8_enable_backtrace = false
