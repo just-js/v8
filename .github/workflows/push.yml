@@ -103,6 +103,16 @@ jobs:
           git checkout branch-heads/$V8_VERSION
           gclient sync
           ./build/install-build-deps.sh
+          # build.py sets -DLLVM_ENABLE_LLD=ON for its own from-source
+          # LLVM/clang build (wants lld to link the compiler it's
+          # building) - confirmed directly in the failing cmake
+          # invocation's own flags. lld isn't installed on this runner
+          # at all yet (chicken-and-egg: this step is what would
+          # eventually produce one), so the host gcc/g++ can't satisfy
+          # -fuse-ld=lld. Same class of bfd-vs-lld fragility this
+          # session already hit getting repos/lo working on musl - see
+          # LO-MUSL.md.
+          sudo apt-get install -y lld
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           # --with-ml-inliner-model defaults to 'default' on Linux (empty
           # on every other platform - see build.py's own argparse
@@ -172,7 +182,16 @@ jobs:
   build-windows:
 #    if: ${{ false }}  # disable
     name: windows
-    runs-on: windows-latest
+    # pinned, not windows-latest: that label now points at Windows
+    # Server 2025, which ships VS2026 - the pinned build/vs_toolchain.py
+    # this V8 branch checks out only recognizes 2022/2019/2017 (that's
+    # literally what its own "supported versions" error message lists),
+    # so it can't find a VS install it knows about even though one
+    # genuinely exists. Confirmed directly against vs_toolchain.py's
+    # real detection code and GitHub's own runner-images docs, not
+    # guessed. windows-2022 still ships VS2022 Enterprise at the
+    # standard path this script actually checks.
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
