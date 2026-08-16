@@ -40,6 +40,8 @@ jobs:
             content_type: application/zip
           - asset: gen-win-x64.zip
             content_type: application/zip
+          - asset: libcxx-headers-win-x64.zip
+            content_type: application/zip
     steps:
       - uses: actions/download-artifact@v4
         with:

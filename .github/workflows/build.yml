@@ -73,7 +73,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: compile v8
+      - name: fetch v8 source
         env:
           # plain, unversioned gcc/g++ - matches what build.py's own
           # --host-cc=gcc/--host-cxx=g++/CMAKE_C_COMPILER=gcc flags
@@ -97,6 +97,7 @@ jobs:
           git config --global user.email "ci@example.com"
           git config --global user.name "CI"
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          echo "$GITHUB_WORKSPACE/depot_tools" >> "$GITHUB_PATH"
           export PATH="${PATH}:$GITHUB_WORKSPACE/depot_tools"
           gclient
           fetch v8
@@ -114,6 +115,39 @@ jobs:
           # session already hit getting repos/lo working on musl - see
           # LO-MUSL.md.
           sudo apt-get install -y lld
+      - name: cache bootstrap clang/llvm build
+        id: clang-cache
+        uses: actions/cache@v4
+        with:
+          # build.py (below) unconditionally `RmTree`s and reconfigures
+          # this directory from scratch every run - confirmed directly
+          # in its source, no incremental-build support at all - so
+          # there's no point restoring a cache *into* it. Instead this
+          # cache lets us skip calling build.py entirely on a hit: V8's
+          # own gn build never overrides clang_base_path in
+          # args.linux.arm64.gn, so it falls back to Chromium's
+          # documented default (build/config/clang/clang.gni) of
+          # //third_party/llvm-build/Release+Asserts - the exact same
+          # path build.py installs into. If a valid clang/lld is
+          # already there, ninja v8_monolith just uses it.
+          path: v8/third_party/llvm-build/Release+Asserts
+          # tools/clang/scripts/update.py (checked out by gclient sync
+          # above, pinned by V8's own DEPS at branch-heads/$V8_VERSION)
+          # carries CLANG_REVISION/CLANG_SUB_REVISION - hashing it keys
+          # the cache to the actual pinned LLVM commit, not to anything
+          # we control. Since we're pinned to a fixed release branch,
+          # not a moving one, this should stay stable across our own
+          # reruns. The trailing suffix is our own build.py flag set
+          # (--disable-asserts --no-tools) - bump it if those change,
+          # since that changes what ends up in the cached directory.
+          key: clang-arm64-${{ hashFiles('v8/tools/clang/scripts/update.py') }}-noasserts-notools-v1
+      - name: build bootstrap clang
+        if: steps.clang-cache.outputs.cache-hit != 'true'
+        env:
+          CC: gcc
+          CXX: g++
+        run: |
+          cd ${{ github.workspace }}/v8
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
           # --with-ml-inliner-model defaults to 'default' on Linux (empty
           # on every other platform - see build.py's own argparse
@@ -140,6 +174,9 @@ jobs:
           # question rather than chasing a GCC/ADL compatibility fix in
           # code we don't need.
           CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts --with-ml-inliner-model= --no-tools
+      - name: build v8
+        run: |
+          cd ${{ github.workspace }}/v8
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
@@ -244,6 +281,30 @@ jobs:
         run: |
           Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}.zip
           Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen -Destination ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
+      - name: package libc++ headers
+        shell: pwsh
+        run: |
+          # args.win.${{ matrix.platform }}.gn sets use_custom_libcxx=true,
+          # so v8_monolith.lib was compiled against this exact vendored
+          # libc++, not MSVC's own STL (see C++.md entry 2) - consumers
+          # like repos/lo need the matching headers to link cleanly
+          # against it. Two separate locations, confirmed directly
+          # against Chromium's own build/config/c++/BUILD.gn:
+          #  - third_party/libc++/src/include: the actual STL headers,
+          #    added via a plain -I flag.
+          #  - buildtools/third_party/libc++/{__config_site,
+          #    __assertion_handler}: two loose ABI-config headers next
+          #    to libc++'s own BUILD.gn, added via a separate directory
+          #    -I flag (confirmed via GitHub's contents listing for that
+          #    directory - nothing else there is a header).
+          # Preserving this relative layout in the archive means a
+          # consumer's -I flags can point at the same two paths
+          # unmodified.
+          New-Item -ItemType Directory -Path staging/third_party/libc++/src -Force | Out-Null
+          Copy-Item -Recurse -Path ${{ github.workspace }}/v8/third_party/libc++/src/include -Destination staging/third_party/libc++/src/include
+          New-Item -ItemType Directory -Path staging/buildtools/third_party/libc++ -Force | Out-Null
+          Copy-Item -Path ${{ github.workspace }}/v8/buildtools/third_party/libc++/__config_site,${{ github.workspace }}/v8/buildtools/third_party/libc++/__assertion_handler -Destination staging/buildtools/third_party/libc++/
+          Compress-Archive -Path staging/* -Destination ${{ github.workspace }}/libcxx-headers-win-${{ matrix.platform }}.zip
       - name: Upload static library
         uses: actions/upload-artifact@v4
         with:
@@ -254,3 +315,8 @@ jobs:
         with:
           path: ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
           name: gen-win-${{ matrix.platform }}.zip
+      - name: Upload libc++ headers
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libcxx-headers-win-${{ matrix.platform }}.zip
+          name: libcxx-headers-win-${{ matrix.platform }}.zip
