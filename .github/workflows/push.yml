@@ -74,8 +74,17 @@ jobs:
         uses: actions/checkout@v3
       - name: compile v8
         env:
-          CC: gcc-13
-          CXX: g++-13
+          # plain, unversioned gcc/g++ - matches what build.py's own
+          # --host-cc=gcc/--host-cxx=g++/CMAKE_C_COMPILER=gcc flags
+          # already assume below. gcc-13 doesn't exist on this runner
+          # image at all (confirmed against GitHub's own runner-images
+          # docs: ubuntu-22.04-arm only has 10/11/12 preinstalled), and
+          # at least one sub-build inside build.py (libxml2, built via
+          # its own cmake configure) reads CC/CXX from the ambient
+          # environment directly rather than the flags passed to
+          # build.py itself, so the two need to actually agree.
+          CC: gcc
+          CXX: g++
         run: |
           # arm64 has no prebuilt clang from Google, so gclient sync
           # checks out the real llvm/llvm-project source tree and
