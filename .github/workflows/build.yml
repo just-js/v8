@@ -123,7 +123,23 @@ jobs:
           # specific. Disabling it explicitly skips that whole path
           # (and the tensorflow pip dependency it needs) rather than
           # trying to satisfy it.
-          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts --with-ml-inliner-model=
+          #
+          # --no-tools skips building CHROMIUM_TOOLS (plugins,
+          # blink_gc_plugin, raw_ptr_plugin, translation_unit - all
+          # Chromium/Blink-specific clang static-analysis plugins, on by
+          # default, confirmed directly in build.py's own argparse) -
+          # entirely irrelevant to building V8's own library, same
+          # pattern as --with-ml-inliner-model= above. Real compile
+          # failure hit without it: blink_gc_plugin/BadPatternFinder.cpp
+          # fails on GCC 11 (the host bootstrap compiler here) with
+          # "'dyn_cast' was not declared in this scope" - an
+          # unqualified-ADL-lookup difference between GCC and clang in
+          # LLVM-adjacent code that's normally only ever compiled with
+          # clang itself (x64 never bootstraps a compiler at all, so it
+          # never hits this). Skipping the tools avoids the whole
+          # question rather than chasing a GCC/ADL compatibility fix in
+          # code we don't need.
+          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts --with-ml-inliner-model= --no-tools
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
