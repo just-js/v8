@@ -9,7 +9,14 @@ symbol_level=0
 target_cpu = "x64"
 target_os="win"
 treat_warnings_as_errors=false
-use_custom_libcxx=false
+# true, unlike linux/mac's use_custom_libcxx=false (system libstdc++
+# there) - MSVC's own STL is an unsupported/broken config for building
+# V8 with clang-cl on Windows (confirmed: a real v8-users thread hit
+# the exact same "unable to build with use_custom_libcxx set to false",
+# and a V8 team member's own reply says "MSVC support will soon be
+# deprecated altogether"). repos/lo's own build.cmd needs to link
+# against libc++ too, to match, once this produces a real archive.
+use_custom_libcxx=true
 use_rtti=true
 use_sysroot=false
 v8_deprecation_warnings=false

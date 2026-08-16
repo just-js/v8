@@ -1,0 +1,240 @@
+name: build v8 libs (reusable)
+on:
+  workflow_call:
+
+env:
+  V8_VERSION: "14.4"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  build-linux-x64:
+#    if: ${{ false }}  # disable
+    name: linux
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: compile v8
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+          fetch v8
+          cd ${{ github.workspace }}/v8
+          git checkout branch-heads/$V8_VERSION
+          gclient sync
+          ./build/install-build-deps.sh
+          mkdir -p out.gn/linux.${{ matrix.platform }}.release/
+          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          gn gen out.gn/linux.${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
+          gn args --list out.gn/linux.${{ matrix.platform }}.release
+          tar -zcvf ../include.tar.gz include
+          tar -zcvf ../src.tar.gz src
+          gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
+      - name: Upload headers
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/include.tar.gz
+          name: include.tar.gz
+      - name: Upload source
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/src.tar.gz
+          name: src.tar.gz
+      - name: Upload static library
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+      - name: Upload generated source
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
+          name: gen-linux-${{ matrix.platform }}.tar.gz
+
+  build-linux-arm64:
+#    if: ${{ false }}  # disable
+    name: linux
+    runs-on: ubuntu-22.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: compile v8
+        env:
+          # plain, unversioned gcc/g++ - matches what build.py's own
+          # --host-cc=gcc/--host-cxx=g++/CMAKE_C_COMPILER=gcc flags
+          # already assume below. gcc-13 doesn't exist on this runner
+          # image at all (confirmed against GitHub's own runner-images
+          # docs: ubuntu-22.04-arm only has 10/11/12 preinstalled), and
+          # at least one sub-build inside build.py (libxml2, built via
+          # its own cmake configure) reads CC/CXX from the ambient
+          # environment directly rather than the flags passed to
+          # build.py itself, so the two need to actually agree.
+          CC: gcc
+          CXX: g++
+        run: |
+          # arm64 has no prebuilt clang from Google, so gclient sync
+          # checks out the real llvm/llvm-project source tree and
+          # applies Chromium's local patches via `git cherry-pick`
+          # (x64 skips this entirely - it just fetches a prebuilt).
+          # cherry-pick creates a real commit, which needs a git
+          # identity - this runner has none configured at all, so it
+          # fails with "unable to auto-detect email address" otherwise.
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="${PATH}:$GITHUB_WORKSPACE/depot_tools"
+          gclient
+          fetch v8
+          cd ${{ github.workspace }}/v8
+          git checkout branch-heads/$V8_VERSION
+          gclient sync
+          ./build/install-build-deps.sh
+          # build.py sets -DLLVM_ENABLE_LLD=ON for its own from-source
+          # LLVM/clang build (wants lld to link the compiler it's
+          # building) - confirmed directly in the failing cmake
+          # invocation's own flags. lld isn't installed on this runner
+          # at all yet (chicken-and-egg: this step is what would
+          # eventually produce one), so the host gcc/g++ can't satisfy
+          # -fuse-ld=lld. Same class of bfd-vs-lld fragility this
+          # session already hit getting repos/lo working on musl - see
+          # LO-MUSL.md.
+          sudo apt-get install -y lld
+          export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
+          # --with-ml-inliner-model defaults to 'default' on Linux (empty
+          # on every other platform - see build.py's own argparse
+          # definition), which triggers downloading/embedding Chrome's
+          # MLGO inliner-optimization model via get_tensorflow.py -
+          # entirely irrelevant to building V8, Chrome-for-Android-
+          # specific. Disabling it explicitly skips that whole path
+          # (and the tensorflow pip dependency it needs) rather than
+          # trying to satisfy it.
+          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts --with-ml-inliner-model=
+          mkdir -p out.gn/linux.${{ matrix.platform }}.release/
+          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          gn gen out.gn/linux.${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
+          gn args --list out.gn/linux.${{ matrix.platform }}.release
+          gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
+      - name: Upload static library
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}.a.gz
+          name: libv8_monolith-linux-${{ matrix.platform }}.a.gz
+      - name: Upload generated source
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
+          name: gen-linux-${{ matrix.platform }}.tar.gz
+
+  build-mac:
+#    if: ${{ false }}  # disable
+    name: mac
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64,arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: build v8
+        run: |
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          export PATH="$GITHUB_WORKSPACE/depot_tools:${PATH}"
+          gclient
+          fetch v8
+          cd ${{ github.workspace }}/v8
+          git checkout branch-heads/$V8_VERSION
+          gclient sync
+          mkdir -p out.gn/${{ matrix.platform }}.release/
+          cp ${{ github.workspace }}/args.mac.${{ matrix.platform }}.gn ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/args.gn
+          gn gen out.gn/${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
+          gn args --list out.gn/${{ matrix.platform }}.release
+          gzip -9 -c out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          tar -zcvf ../gen-mac-${{ matrix.platform }}.tar.gz out.gn/${{ matrix.platform }}.release/gen
+      - name: Upload static library
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}.a.gz
+          name: libv8_monolith-mac-${{ matrix.platform }}.a.gz
+      - name: Upload generated source
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz
+          name: gen-mac-${{ matrix.platform }}.tar.gz
+
+  build-windows:
+#    if: ${{ false }}  # disable
+    name: windows
+    # pinned, not windows-latest: that label now points at Windows
+    # Server 2025, which ships VS2026 - the pinned build/vs_toolchain.py
+    # this V8 branch checks out only recognizes 2022/2019/2017 (that's
+    # literally what its own "supported versions" error message lists),
+    # so it can't find a VS install it knows about even though one
+    # genuinely exists. Confirmed directly against vs_toolchain.py's
+    # real detection code and GitHub's own runner-images docs, not
+    # guessed. windows-2022 still ships VS2022 Enterprise at the
+    # standard path this script actually checks.
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: setup env
+        shell: pwsh
+        run: |
+          echo "${{ github.workspace }}/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: prepared v8 build environment
+        run: |
+          git config --global depot-tools.allowGlobalGitConfig true
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+          gclient
+          fetch v8
+          cd v8
+          git checkout branch-heads/$V8_VERSION
+          gclient sync
+      - name: compile v8 static library
+        shell: pwsh
+        run: |
+          New-Item -ItemType directory -Path v8/out.gn/${{ matrix.platform }}.release/
+          Copy-Item "args.win.${{ matrix.platform }}.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force
+          Set-Location -Path v8
+          gn gen out.gn/${{ matrix.platform }}.release
+          ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
+          gn args --list out.gn/${{ matrix.platform }}.release
+      - name: compress artifacts
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/v8_monolith.lib -Destination ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}.zip
+          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/gen -Destination ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
+      - name: Upload static library
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}.zip
+          name: libv8_monolith-win-${{ matrix.platform }}.zip
+      - name: Upload generated source
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-win-${{ matrix.platform }}.zip
+          name: gen-win-${{ matrix.platform }}.zip

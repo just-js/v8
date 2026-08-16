@@ -9,7 +9,8 @@ symbol_level=0
 target_cpu = "arm64"
 target_os="win"
 treat_warnings_as_errors=false
-use_custom_libcxx=false
+# see args.win.x64.gn for why this is true, unlike linux/mac
+use_custom_libcxx=true
 use_rtti=true
 use_sysroot=false
 v8_deprecation_warnings=false
