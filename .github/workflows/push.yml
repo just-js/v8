@@ -104,7 +104,15 @@ jobs:
           gclient sync
           ./build/install-build-deps.sh
           export VPYTHON_BYPASS="manually managed python not supported by chrome operations"
-          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts
+          # --with-ml-inliner-model defaults to 'default' on Linux (empty
+          # on every other platform - see build.py's own argparse
+          # definition), which triggers downloading/embedding Chrome's
+          # MLGO inliner-optimization model via get_tensorflow.py -
+          # entirely irrelevant to building V8, Chrome-for-Android-
+          # specific. Disabling it explicitly skips that whole path
+          # (and the tensorflow pip dependency it needs) rather than
+          # trying to satisfy it.
+          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts --with-ml-inliner-model=
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
           cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
