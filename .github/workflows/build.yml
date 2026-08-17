@@ -519,3 +519,16 @@ jobs:
           set PATH=C:\Program Files\LLVM\bin;%PATH%
           cd lo
           call build.cmd
+          rem build.cmd has no error propagation between its own internal
+          rem commands (same real bug documented in repos/lo's own
+          rem PLAN.md/task 36 history) - a failed clang++/link step
+          rem doesn't stop the script or fail this CI step. Confirmed
+          rem directly: this step reported success once already despite
+          rem a real LNK1120 (10 unresolved externals, the libcpmt.lib
+          rem gap) - explicit check needed, matching the
+          rem if-no-files-found: error guarantee repos/lo's own real
+          rem windows job already has on its upload step.
+          if not exist lo.exe (
+            echo lo.exe was not produced - build.cmd failed internally without propagating an error
+            exit /b 1
+          )
