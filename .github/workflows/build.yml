@@ -276,16 +276,20 @@ jobs:
         run: |
           git config --global depot-tools.allowGlobalGitConfig true
       # depot_tools itself is a much smaller/faster clone than v8 (the
-      # real cost is gclient sync below), but it's still a real,
-      # occasionally-flaky network op - this session already hit one
-      # transient failure in depot_tools' own self-update mechanism
-      # ("depot_tools update failed. Conflict in ... ruff_chromium").
-      # Caching this too and disabling the self-update check
-      # (DEPOT_TOOLS_UPDATE=0 below) removes that whole class of
-      # flakiness, not just the clone time. Fixed key (not keyed on
-      # V8_VERSION - depot_tools itself is independent of which V8
-      # version we're building), bump the -v1 suffix manually if it
-      # ever needs a forced refresh.
+      # real cost is gclient sync below), but still a real network op
+      # worth caching. Fixed key (not keyed on V8_VERSION - depot_tools
+      # itself is independent of which V8 version we're building), bump
+      # the -v1 suffix manually if it ever needs a forced refresh.
+      #
+      # DEPOT_TOOLS_UPDATE=0 was tried here too, to also skip
+      # depot_tools' own self-update check (this session hit one
+      # transient failure there: "depot_tools update failed. Conflict
+      # in ... ruff_chromium") - reverted: it broke something depot_tools'
+      # own git-cache mechanism depends on (real, reproducible
+      # `FileNotFoundError` deep in git_cache.py's GetCachePath(), not
+      # present before this env var was added). Not worth the
+      # uncertainty for a minor speed/flakiness win - the actual
+      # expensive, worth-caching part is gclient sync below, not this.
       - name: restore depot_tools cache
         id: depot-tools-cache
         uses: actions/cache/restore@v4
@@ -311,8 +315,6 @@ jobs:
           path: depot_tools
           key: depot_tools-windows-v1
       - name: init depot_tools
-        env:
-          DEPOT_TOOLS_UPDATE: "0"
         run: |
           gclient
       # branch-heads/$V8_VERSION is meant to be stable once cut (same
@@ -338,8 +340,6 @@ jobs:
           key: v8-src-windows-${{ env.V8_VERSION }}-v1
       - name: prepared v8 build environment
         if: steps.v8-cache.outputs.cache-hit != 'true'
-        env:
-          DEPOT_TOOLS_UPDATE: "0"
         run: |
           fetch v8
           cd v8
