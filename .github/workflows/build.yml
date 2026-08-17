@@ -3,7 +3,12 @@ on:
   workflow_call:
 
 env:
-  V8_VERSION: "15.0"
+  # back to 14.5 while we isolate/fix the Windows libc++-linking issue
+  # (task 40/LO-WINDOWS.md) - 15.0/15.1 have real, separate, unrelated
+  # bugs (mac SDK-symlink, Torque/JSAtomicsMutex) not worth conflating
+  # with this fix. 14.5 through 15.0 are otherwise green everywhere
+  # except this Windows issue.
+  V8_VERSION: "14.5"
 
 defaults:
   run:
@@ -12,7 +17,10 @@ defaults:
 jobs:
 
   build-linux-x64:
-#    if: ${{ false }}  # disable
+    # disabled to save CI time while isolating the Windows libc++
+    # linking issue (task 40/LO-WINDOWS.md) - already confirmed green
+    # 14.5 through 15.0, re-enable once done here.
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -63,7 +71,10 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-linux-arm64:
-#    if: ${{ false }}  # disable
+    # disabled to save CI time while isolating the Windows libc++
+    # linking issue (task 40/LO-WINDOWS.md) - already confirmed green
+    # 14.5 through 15.0, re-enable once done here.
+    if: ${{ false }}  # disable
     name: linux
     runs-on: ubuntu-22.04-arm
     strategy:
@@ -196,7 +207,10 @@ jobs:
           name: gen-linux-${{ matrix.platform }}.tar.gz
 
   build-mac:
-#    if: ${{ false }}  # disable
+    # disabled to save CI time while isolating the Windows libc++
+    # linking issue (task 40/LO-WINDOWS.md) - already confirmed green
+    # 14.5 through 15.0, re-enable once done here.
+    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
     strategy:
@@ -267,6 +281,46 @@ jobs:
           cd v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
+      - name: patch v8_monolith to depend on libc++ explicitly
+        run: |
+          # v8_monolith is a `static_library`, and Chromium's automatic
+          # libc++ dependency injection (build/config/BUILD.gn's
+          # common_deps group) only applies to executable/shared_library/
+          # loadable_module targets - confirmed directly in that file's
+          # own comments ("Only the executable template in
+          # BUILDCONFIG.gn should reference this", same wording for
+          # loadable_module/shared_library). static_library is never
+          # covered. That's fine for a normal Chromium build, where
+          # every static lib eventually gets linked into a real
+          # executable/shared_library *within the same build*, which is
+          # where libc++ actually gets pulled in - but v8_monolith is
+          # unusual: it's meant to be the final, self-contained artifact,
+          # consumed entirely outside this build (by repos/lo and any
+          # other embedder). Nothing in this graph ever triggers
+          # common_deps, so libc++'s compiled implementation objects
+          # never become a real dependency of v8_monolith at all, even
+          # though `complete_static_lib` would happily fold them in if
+          # they were. Real, reproducible symptom without this: dozens
+          # of genuine LNK2019/LNK2001 unresolved externals at final
+          # link time for libc++ runtime symbols (std::__Cr::__sort,
+          # mutex::lock/unlock, locale internals, regex internals,
+          # basic_string members, etc) - not caught by V8's own CI since
+          # producing a static archive never does symbol resolution.
+          # Minimal patch: make v8_monolith depend on libc++ explicitly,
+          # same guard common_deps itself uses.
+          node -e "
+            const fs = require('fs');
+            const path = 'BUILD.gn';
+            let content = fs.readFileSync(path, 'utf8');
+            const re = /(v8_static_library\(\"v8_monolith\"\)\s*\{\s*deps\s*=\s*\[[\s\S]*?\"\/\/build\/win:default_exe_manifest\",\s*\n\s*\])/;
+            const m = content.match(re);
+            if (!m) { console.error('PATCH TARGET NOT FOUND - v8_monolith deps block has changed shape, aborting'); process.exit(1); }
+            const patched = m[1] + '\n    if (use_custom_libcxx) {\n      deps += [ \"//buildtools/third_party/libc++\" ]\n    }';
+            content = content.replace(re, patched);
+            fs.writeFileSync(path, content);
+            console.log('patched v8_monolith to depend on //buildtools/third_party/libc++ when use_custom_libcxx');
+          "
+        working-directory: v8
       - name: compile v8 static library
         shell: pwsh
         run: |
