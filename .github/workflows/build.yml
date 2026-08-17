@@ -279,7 +279,7 @@ jobs:
       # real cost is gclient sync below), but still a real network op
       # worth caching. Fixed key (not keyed on V8_VERSION - depot_tools
       # itself is independent of which V8 version we're building), bump
-      # the -v1 suffix manually if it ever needs a forced refresh.
+      # the -v2 suffix manually if it ever needs a forced refresh.
       #
       # DEPOT_TOOLS_UPDATE=0 was tried here too, to also skip
       # depot_tools' own self-update check (this session hit one
@@ -295,7 +295,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: depot_tools
-          key: depot_tools-windows-v1
+          key: depot_tools-windows-v2
       - name: clone depot_tools
         if: steps.depot-tools-cache.outputs.cache-hit != 'true'
         run: |
@@ -313,7 +313,26 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: depot_tools
-          key: depot_tools-windows-v1
+          key: depot_tools-windows-v2
+      # depot_tools is disposable tooling, never intentionally edited -
+      # always force the checkout to a pristine state before letting
+      # `gclient` run its own self-update. Needed because the cache key
+      # above is fixed/never expires on its own: the cached checkout gets
+      # stale relative to upstream depot_tools over time, and depot_tools'
+      # self-update (a `git checkout` to the newer upstream commit) then
+      # refuses to proceed once it thinks tracked files differ from the
+      # target commit - real, reproduced failure from a stale cache hit:
+      # "depot_tools update failed. Conflict in .../depot_tools ... Your
+      # local changes to the following files would be overwritten by
+      # checkout: git_cl.py, infra/config/recipes.cfg, ..." - and once it
+      # starts happening it blocks every subsequent run identically,
+      # re-run or not, until the cache is force-refreshed. no-op on a
+      # freshly cloned checkout, so safe to always run regardless of
+      # cache hit/miss.
+      - name: clean depot_tools checkout
+        run: |
+          git -C depot_tools reset --hard
+          git -C depot_tools clean -fd
       - name: init depot_tools
         run: |
           gclient
