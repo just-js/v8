@@ -344,6 +344,30 @@ jobs:
             fs.writeFileSync(path, content);
             console.log('patched v8_monolith to depend on //buildtools/third_party/libc++ when use_custom_libcxx');
           "
+          # First attempt at this patch (this session) missed a second
+          # piece: the libc++ target itself restricts who's allowed to
+          # depend on it via GN's own `visibility` mechanism -
+          # confirmed directly, already seen once earlier this session
+          # while investigating the missing-dependency root cause, just
+          # not connected back to this patch at the time. Real,
+          # reproducible failure without this second half:
+          # "ERROR at //build/config/BUILDCONFIG.gn:556:5: Dependency
+          # not allowed." at `gn gen`, before any compilation - the
+          # deps addition above is syntactically fine but GN itself
+          # rejects it. v8_monolith is defined in this file's own
+          # top-level BUILD.gn, so its label is //:v8_monolith.
+          node -e "
+            const fs = require('fs');
+            const path = 'buildtools/third_party/libc++/BUILD.gn';
+            let content = fs.readFileSync(path, 'utf8');
+            const re = /(visibility\s*=\s*\[\s*\"\/\/build\/config:common_deps\",\s*\n\s*\"\/\/third_party\/catapult\/devil\",\s*\n\s*\])/;
+            const m = content.match(re);
+            if (!m) { console.error('VISIBILITY PATCH TARGET NOT FOUND - libc++ BUILD.gn visibility block has changed shape, aborting'); process.exit(1); }
+            const patched = m[1] + '\n  visibility += [ \"//:v8_monolith\" ]';
+            content = content.replace(re, patched);
+            fs.writeFileSync(path, content);
+            console.log('patched libc++ visibility to allow //:v8_monolith to depend on it');
+          "
         working-directory: v8
       - name: compile v8 static library
         shell: pwsh
