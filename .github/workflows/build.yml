@@ -272,10 +272,48 @@ jobs:
         run: |
           echo "${{ github.workspace }}/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: clone depot_tools
+      - name: git config for depot_tools
         run: |
           git config --global depot-tools.allowGlobalGitConfig true
+      # depot_tools itself is a much smaller/faster clone than v8 (the
+      # real cost is gclient sync below), but it's still a real,
+      # occasionally-flaky network op - this session already hit one
+      # transient failure in depot_tools' own self-update mechanism
+      # ("depot_tools update failed. Conflict in ... ruff_chromium").
+      # Caching this too and disabling the self-update check
+      # (DEPOT_TOOLS_UPDATE=0 below) removes that whole class of
+      # flakiness, not just the clone time. Fixed key (not keyed on
+      # V8_VERSION - depot_tools itself is independent of which V8
+      # version we're building), bump the -v1 suffix manually if it
+      # ever needs a forced refresh.
+      - name: restore depot_tools cache
+        id: depot-tools-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: depot_tools
+          key: depot_tools-windows-v1
+      - name: clone depot_tools
+        if: steps.depot-tools-cache.outputs.cache-hit != 'true'
+        run: |
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+      # actions/cache's combined action only saves at end-of-job, and
+      # explicitly skips saving if *any* step in the job failed -
+      # confirmed directly (this session's own previous run: "Post
+      # cache v8 checkout" showed completed/skipped despite the clone
+      # itself succeeding, because a later, unrelated step - compile -
+      # failed). Explicit save right after the clone succeeds instead,
+      # decoupled from whatever happens later in the job. Same fix
+      # applied to the v8 checkout cache below.
+      - name: save depot_tools cache
+        if: steps.depot-tools-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: depot_tools
+          key: depot_tools-windows-v1
+      - name: init depot_tools
+        env:
+          DEPOT_TOOLS_UPDATE: "0"
+        run: |
           gclient
       # branch-heads/$V8_VERSION is meant to be stable once cut (same
       # trade-off already accepted for the linux-arm64 clang-bootstrap
@@ -292,19 +330,32 @@ jobs:
       # GitHub Actions caches have historically had a ~10GB per-entry
       # limit. Worth checking the actual size after this first
       # cache-populating run rather than assuming it fits.
-      - name: cache v8 checkout
+      - name: restore v8 checkout cache
         id: v8-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: v8
           key: v8-src-windows-${{ env.V8_VERSION }}-v1
       - name: prepared v8 build environment
         if: steps.v8-cache.outputs.cache-hit != 'true'
+        env:
+          DEPOT_TOOLS_UPDATE: "0"
         run: |
           fetch v8
           cd v8
           git checkout branch-heads/$V8_VERSION
           gclient sync
+      # explicit save right after sync succeeds, not deferred to
+      # end-of-job - see the depot_tools cache comment above for why
+      # (actions/cache's combined action skips saving if any later,
+      # unrelated step fails - confirmed directly, not guessed, from
+      # this exact job the first time around).
+      - name: save v8 checkout cache
+        if: steps.v8-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: v8
+          key: v8-src-windows-${{ env.V8_VERSION }}-v1
       - name: patch v8_monolith to depend on libc++ explicitly
         run: |
           # v8_monolith is a `static_library`, and Chromium's automatic
