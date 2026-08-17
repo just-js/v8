@@ -272,11 +272,35 @@ jobs:
         run: |
           echo "${{ github.workspace }}/depot_tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           echo "DEPOT_TOOLS_WIN_TOOLCHAIN=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: prepared v8 build environment
+      - name: clone depot_tools
         run: |
           git config --global depot-tools.allowGlobalGitConfig true
           git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
           gclient
+      # branch-heads/$V8_VERSION is meant to be stable once cut (same
+      # trade-off already accepted for the linux-arm64 clang-bootstrap
+      # cache) - this session alone has re-run this exact fetch+sync
+      # something like 5-6 times against the same 14.5 pin while
+      # iterating on the Windows-only libc++ linking issue
+      # (task 40/LO-WINDOWS.md), each time paying the full ~5-8 minute
+      # cost for no reason. Cached *before* the libc++ patch step below,
+      # so the patch (which isn't idempotent - it errors out loudly if
+      # its target block is already patched) always runs against a
+      # known-unpatched tree, whether freshly synced or freshly
+      # restored from cache. Real unconfirmed risk: a full V8 checkout
+      # plus its buildtools/third_party DEPS could be several GB -
+      # GitHub Actions caches have historically had a ~10GB per-entry
+      # limit. Worth checking the actual size after this first
+      # cache-populating run rather than assuming it fits.
+      - name: cache v8 checkout
+        id: v8-cache
+        uses: actions/cache@v4
+        with:
+          path: v8
+          key: v8-src-windows-${{ env.V8_VERSION }}-v1
+      - name: prepared v8 build environment
+        if: steps.v8-cache.outputs.cache-hit != 'true'
+        run: |
           fetch v8
           cd v8
           git checkout branch-heads/$V8_VERSION
