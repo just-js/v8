@@ -104,6 +104,63 @@ jobs:
         with:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
           name: gen-linux-${{ matrix.platform }}.tar.gz
+      # everything below is a sanity-test-only addition, same mechanism
+      # and rationale as the build-windows job's own "sanity test" steps
+      # below: build repos/lo against this job's own freshly-built (not
+      # yet published) v8 output directly, in the same job, instead of
+      # waiting for a real release. Not part of the real release
+      # artifacts - nothing here gets uploaded. Uses repos/lo's own
+      # proven Docker mechanism (docker/Dockerfile.ubuntu, same image
+      # repos/lo's own build-linux CI job builds) rather than build.cmd's
+      # direct-compile approach, since that's how this platform actually
+      # builds lo. The Makefile's v8/libv8_monolith.a and
+      # v8/include/.stamp targets are real file/stamp targets - staging
+      # the files without also touching the matching .stamp files would
+      # make `make` think they're missing and re-download the published
+      # (stale) release instead of using this job's fresh build.
+      - name: checkout lo (sanity test)
+        uses: actions/checkout@v3
+        with:
+          repository: just-js/lo
+          ref: main
+          path: lo
+      - name: stage freshly-built v8 for lo (sanity test)
+        run: |
+          mkdir -p lo/v8
+          cp -r ${{ github.workspace }}/v8/include lo/v8/include
+          touch lo/v8/.stamp lo/v8/include/.stamp
+          cp ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      - name: build lo against freshly-built v8 (sanity test)
+        run: |
+          cd lo
+          docker build -t lo-glibc -f docker/Dockerfile.ubuntu .
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc make ARCH=${{ matrix.platform }} lo
+          if [ ! -f lo ]; then
+            echo "lo was not produced"
+            exit 1
+          fi
+      # the previous step only confirms lo was produced and linked - it
+      # doesn't confirm the binary actually runs (same rationale as the
+      # Windows job's own separate smoke-test step below its build step).
+      - name: run lo smoke test (sanity test)
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo smoke test passed:"
+            cat smoketest-out.txt
+          '
 
   build-linux-arm64:
 #    if: ${{ false }}  # disable
@@ -284,6 +341,48 @@ jobs:
         with:
           path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}.tar.gz
           name: gen-linux-${{ matrix.platform }}.tar.gz
+      # sanity-test-only addition, same as build-linux-x64's own block
+      # above - see its comments for the full rationale.
+      - name: checkout lo (sanity test)
+        uses: actions/checkout@v3
+        with:
+          repository: just-js/lo
+          ref: main
+          path: lo
+      - name: stage freshly-built v8 for lo (sanity test)
+        run: |
+          mkdir -p lo/v8
+          cp -r ${{ github.workspace }}/v8/include lo/v8/include
+          touch lo/v8/.stamp lo/v8/include/.stamp
+          cp ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      - name: build lo against freshly-built v8 (sanity test)
+        run: |
+          cd lo
+          docker build -t lo-glibc -f docker/Dockerfile.ubuntu .
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc make ARCH=${{ matrix.platform }} lo
+          if [ ! -f lo ]; then
+            echo "lo was not produced"
+            exit 1
+          fi
+      - name: run lo smoke test (sanity test)
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo smoke test passed:"
+            cat smoketest-out.txt
+          '
 
   build-mac:
 #    if: ${{ false }}  # disable
@@ -366,6 +465,52 @@ jobs:
         with:
           path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}.tar.gz
           name: gen-mac-${{ matrix.platform }}.tar.gz
+      # sanity-test-only addition, same rationale as build-linux-x64's
+      # own block - build repos/lo against this job's own freshly-built
+      # v8 output directly, no docker needed here (matches repos/lo's
+      # own build-mac/build-mac-x64 jobs, which build lo directly on the
+      # runner via `make`, not in a container). brew install matches
+      # repos/lo's own build-mac job - unconfirmed whether the x64 leg
+      # (cross-compiled on this arm64 runner, same as repos/lo's own
+      # build-mac-x64 job) actually needs these, but harmless if not.
+      - name: checkout lo (sanity test)
+        uses: actions/checkout@v3
+        with:
+          repository: just-js/lo
+          ref: main
+          path: lo
+      - name: stage freshly-built v8 for lo (sanity test)
+        run: |
+          mkdir -p lo/v8
+          cp -r ${{ github.workspace }}/v8/include lo/v8/include
+          touch lo/v8/.stamp lo/v8/include/.stamp
+          cp ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      - name: build lo against freshly-built v8 (sanity test)
+        run: |
+          cd lo
+          brew install lz4 zstd openssl@3
+          make ARCH=${{ matrix.platform }} lo
+          if [ ! -f lo ]; then
+            echo "lo was not produced"
+            exit 1
+          fi
+      - name: run lo smoke test (sanity test)
+        run: |
+          cd lo
+          ./lo eval "console.log('hello')" > smoketest-out.txt
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "lo eval exited with a non-zero code"
+            cat smoketest-out.txt
+            exit 1
+          fi
+          if ! grep -q hello smoketest-out.txt; then
+            echo "lo eval ran but did not print the expected output"
+            cat smoketest-out.txt
+            exit 1
+          fi
+          echo "lo smoke test passed:"
+          cat smoketest-out.txt
 
   build-windows:
 #    if: ${{ false }}  # disable
