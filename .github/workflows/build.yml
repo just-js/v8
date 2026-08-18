@@ -161,6 +161,41 @@ jobs:
             echo "lo smoke test passed:"
             cat smoketest-out.txt
           '
+      # musl smoke test - a separate libc surface from the glibc test
+      # above (repos/lo's own musl-glibc-compat.o shim, different
+      # sysroot, see LO-MUSL.md), reuses the same checked-out lo/ dir
+      # and staged v8 output. `make clean` first: the glibc build above
+      # already left glibc-linked .o files in this same directory, and
+      # make's own staleness check has no way to know the compiler
+      # target changed underneath it.
+      - name: build lo (musl) against freshly-built v8 (sanity test)
+        run: |
+          cd lo
+          docker build -t lo-musl -f docker/Dockerfile.alpine .
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c "make clean && make ARCH=${{ matrix.platform }} lo"
+          if [ ! -f lo ]; then
+            echo "lo (musl) was not produced"
+            exit 1
+          fi
+      - name: run lo (musl) smoke test (sanity test)
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo (musl) eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo (musl) eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo (musl) smoke test passed:"
+            cat smoketest-out.txt
+          '
 
   build-linux-arm64:
 #    if: ${{ false }}  # disable
@@ -381,6 +416,36 @@ jobs:
               exit 1
             fi
             echo "lo smoke test passed:"
+            cat smoketest-out.txt
+          '
+      # musl smoke test - same rationale as build-linux-x64's own block
+      # above, see its comments.
+      - name: build lo (musl) against freshly-built v8 (sanity test)
+        run: |
+          cd lo
+          docker build -t lo-musl -f docker/Dockerfile.alpine .
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c "make clean && make ARCH=${{ matrix.platform }} lo"
+          if [ ! -f lo ]; then
+            echo "lo (musl) was not produced"
+            exit 1
+          fi
+      - name: run lo (musl) smoke test (sanity test)
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo (musl) eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo (musl) eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo (musl) smoke test passed:"
             cat smoketest-out.txt
           '
 
