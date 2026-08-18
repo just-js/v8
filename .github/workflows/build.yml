@@ -3,15 +3,7 @@ on:
   workflow_call:
 
 env:
-  # Windows libc++-linking issue (task 40/LO-WINDOWS.md) is now fixed and
-  # confirmed (checkpoint 25) - that's no longer why this is pinned at
-  # 14.5. Still not bumping to 15.0/15.1 here though: both have a real,
-  # separate, unrelated Windows Torque/JSAtomicsMutex struct-layout bug
-  # (confirmed present in *both* 15.0 and 15.1, not just 15.1), and 15.1
-  # additionally has its own real mac GN-symlink bug. Linux/mac are
-  # otherwise clean at 15.0. Bump only once that Torque bug is actually
-  # chased down, not just because the libc++ issue is resolved.
-  V8_VERSION: "14.5"
+  V8_VERSION: "14.6"
 
 defaults:
   run:
