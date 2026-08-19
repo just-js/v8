@@ -861,7 +861,7 @@ jobs:
           rem LLVM 20.1.7 install GitHub's own runner images ship at
           rem C:\Program Files\LLVM\bin (confirmed present on both
           rem windows-2022 and windows-2025 via actions/runner-images
-          rem#12565) ahead of PATH gets clang++ >=20 without needing
+          rem #12565) ahead of PATH gets clang++ >=20 without needing
           rem VS2026 at all here - a second, independent test of
           rem whether that's a viable alternative to the runner switch.
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
