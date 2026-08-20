@@ -63,3 +63,19 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   fix compiles in isolation (a standalone `using std::nullptr_t;`
   translation unit) before trusting it; not yet confirmed against a
   real CI run.
+- **[`14.8-wasm-shuffle-reducer-value-or-braces.patch`](14.8-wasm-shuffle-reducer-value-or-braces.patch)**
+  — `src/compiler/turboshaft/wasm-shuffle-reducer.cc:576` at
+  `branch-heads/14.8` calls `max.value_or({})` on a
+  `std::optional<uint8_t>` — real, confirmed build failure on
+  `mac (arm64)`'s real CI toolchain (Xcode 16.4 / macOS 15.5 SDK's
+  libc++, so not specific to this project's own clang+libc++ setup
+  either): `error: no matching member function for call to 'value_or'`,
+  because `value_or(_Up&& __v)`'s forwarding-reference template
+  parameter `_Up` can't be deduced from a bare `{}`. Fetched the real
+  `branch-heads/14.8` source directly and confirmed the exact line.
+  Fix: `max.value_or({})` → `max.value_or(0)` — an `int` literal
+  deduces `_Up = int` fine, and `value_or`'s declared return type
+  (`value_type`, i.e. `uint8_t`) converts it implicitly, same semantics
+  as before (default to zero when `max` is empty). Verified the
+  `std::optional<uint8_t>`/`std::max` call shape compiles in isolation
+  before trusting it; not yet confirmed against a real CI run.
