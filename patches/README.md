@@ -39,4 +39,27 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   for whoever revisits this at 14.8+: if 14.8 already has the include
   upstream, this patch will fail to apply (the context won't match a
   file that already has the line) — that's the signal to delete it, not
-  investigate further.
+  investigate further. **Confirmed still needed at 14.8** (applied
+  cleanly in the real CI run that surfaced the patch below, meaning
+  `branch-heads/14.8`'s `bigint.h` still lacks the include too) — left
+  in place.
+- **[`14.8-object-h-missing-nullptr-t.patch`](14.8-object-h-missing-nullptr-t.patch)**
+  — `include/v8-object.h` at `branch-heads/14.8` uses a bare `nullptr_t`
+  (`AccessorNameGetterCallback getter, nullptr_t setter = nullptr` at
+  line 408) with no `#include <cstddef>` anywhere in its own include
+  chain — real, confirmed build failure on this project's clang+libc++
+  toolchain (`error: unknown type name 'nullptr_t'; did you mean
+  'std::nullptr_t'?`), not guessed: fetched the real
+  `branch-heads/14.8` header directly and confirmed the missing include.
+  `include/v8-template.h` hits the exact same error at ~15 more call
+  sites — but it already has `#include <cstddef>` itself and still
+  fails, because `<cstddef>` only guarantees `std::nullptr_t`, not an
+  unqualified `::nullptr_t` in the global/`v8` namespace (some
+  toolchains inject that as an extension, this one doesn't). Since
+  `v8-template.h` includes `v8-object.h` first, fixing it there once
+  covers both files rather than patching every call site individually:
+  adds `#include <cstddef>` plus `using std::nullptr_t;` inside
+  `namespace v8 { ... }`, right after the opening brace. Verified the
+  fix compiles in isolation (a standalone `using std::nullptr_t;`
+  translation unit) before trusting it; not yet confirmed against a
+  real CI run.
