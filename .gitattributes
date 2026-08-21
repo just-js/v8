@@ -1,0 +1,7 @@
+# patches/*.patch are applied with `git apply`, which matches context
+# lines byte-for-byte. Without this, actions/checkout on the windows
+# runner (core.autocrlf=true by default) converts these plain-LF files
+# to CRLF before the "apply v8 patches" step ever runs, so every patch
+# fails to apply there with a generic "patch does not apply" error.
+# Confirmed via direct reproduction, not guessed.
+patches/*.patch text eol=lf
