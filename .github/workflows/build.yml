@@ -73,7 +73,7 @@ jobs:
           key: v8-src-linux-x64-${{ env.V8_VERSION }}-v1
       - name: apply v8 patches
         run: |
-          for p in ${{ github.workspace }}/patches/*.patch; do
+          for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
             git -C v8 apply "$p"
@@ -289,7 +289,7 @@ jobs:
           key: v8-src-linux-arm64-${{ env.V8_VERSION }}-v1
       - name: apply v8 patches
         run: |
-          for p in ${{ github.workspace }}/patches/*.patch; do
+          for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
             git -C v8 apply "$p"
@@ -526,7 +526,7 @@ jobs:
           key: v8-src-mac-${{ matrix.platform }}-${{ env.V8_VERSION }}-v1
       - name: apply v8 patches
         run: |
-          for p in ${{ github.workspace }}/patches/*.patch; do
+          for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
             git -C v8 apply "$p"
@@ -728,7 +728,7 @@ jobs:
           key: v8-src-windows-${{ env.V8_VERSION }}-v1
       - name: apply v8 patches
         run: |
-          for p in ${{ github.workspace }}/patches/*.patch; do
+          for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
             git -C v8 apply "$p"
