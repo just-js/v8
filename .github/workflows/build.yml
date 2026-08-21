@@ -626,6 +626,17 @@ jobs:
       - name: git config for depot_tools
         run: |
           git config --global depot-tools.allowGlobalGitConfig true
+          # Git for Windows' installer defaults to core.autocrlf=true,
+          # so gclient sync's checkout of v8 below gets CRLF line
+          # endings - but patches/*.patch are plain LF (authored on a
+          # Linux sandbox), and git apply matches context byte-for-byte,
+          # so every patch fails to apply on Windows specifically.
+          # Confirmed via direct reproduction: the same patch applied
+          # against a CRLF copy of the real upstream file fails with the
+          # exact error seen in CI ("patch does not apply"); against LF
+          # it applies cleanly. Forcing this off here, before any clone,
+          # keeps the Windows checkout LF like the other three platforms.
+          git config --global core.autocrlf false
       # depot_tools itself is a much smaller/faster clone than v8 (the
       # real cost is gclient sync below), but still a real network op
       # worth caching. Fixed key (not keyed on V8_VERSION - depot_tools
