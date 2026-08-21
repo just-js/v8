@@ -76,7 +76,7 @@ jobs:
           for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
-            git -C v8 apply "$p"
+            git -C v8 apply "../$p"
           done
       - name: compile v8
         run: |
@@ -292,7 +292,7 @@ jobs:
           for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
-            git -C v8 apply "$p"
+            git -C v8 apply "../$p"
           done
       - name: install build deps
         env:
@@ -529,7 +529,7 @@ jobs:
           for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
-            git -C v8 apply "$p"
+            git -C v8 apply "../$p"
           done
       - name: build v8
         run: |
@@ -731,7 +731,7 @@ jobs:
           for p in patches/*.patch; do
             [ -e "$p" ] || continue
             echo "applying $p"
-            git -C v8 apply "$p"
+            git -C v8 apply "../$p"
           done
       - name: patch v8_monolith to depend on libc++ explicitly
         run: |
