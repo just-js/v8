@@ -1,0 +1,42 @@
+--- a/include/v8-template.h
++++ b/include/v8-template.h
+@@ -757,7 +757,8 @@ struct NamedPropertyHandlerConfiguration {
+   }
+   static NamedPropertySetterCallbackV2 ConvertSetter(
+       NamedPropertySetterCallback value) {
+-    return NamedPropertySetterCallbackV2(value);
++    return reinterpret_cast<NamedPropertySetterCallbackV2>(
++        reinterpret_cast<void*>(value));
+   }
+ 
+   static NamedPropertyDefinerCallbackV2 ConvertDefiner(nullptr_t) {
+@@ -769,7 +770,8 @@ struct NamedPropertyHandlerConfiguration {
+   }
+   static NamedPropertyDefinerCallbackV2 ConvertDefiner(
+       NamedPropertyDefinerCallback value) {
+-    return NamedPropertyDefinerCallbackV2(value);
++    return reinterpret_cast<NamedPropertyDefinerCallbackV2>(
++        reinterpret_cast<void*>(value));
+   }
+ 
+  public:
+@@ -884,7 +886,8 @@ struct IndexedPropertyHandlerConfiguration {
+   }
+   static IndexedPropertySetterCallback ConvertSetter(
+       IndexedPropertySetterCallbackV2 value) {
+-    return IndexedPropertySetterCallback(value);
++    return reinterpret_cast<IndexedPropertySetterCallback>(
++        reinterpret_cast<void*>(value));
+   }
+ 
+   static IndexedPropertyDefinerCallback ConvertDefiner(nullptr_t) {
+@@ -896,7 +899,8 @@ struct IndexedPropertyHandlerConfiguration {
+   }
+   static IndexedPropertyDefinerCallback ConvertDefiner(
+       IndexedPropertyDefinerCallbackV2 value) {
+-    return IndexedPropertyDefinerCallback(value);
++    return reinterpret_cast<IndexedPropertyDefinerCallback>(
++        reinterpret_cast<void*>(value));
+   }
+ 
+  public:

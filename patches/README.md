@@ -79,3 +79,34 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   as before (default to zero when `max` is empty). Verified the
   `std::optional<uint8_t>`/`std::max` call shape compiles in isolation
   before trusting it; not yet confirmed against a real CI run.
+- **[`14.8-template-h-cast-function-type-mismatch.patch`](14.8-template-h-cast-function-type-mismatch.patch)**
+  — `include/v8-template.h` at `branch-heads/14.8` has a real, live V1→V2
+  callback-signature migration in progress (`TODO(crbug.com/348660658):
+  cleanup once migration ... is done`). Its own compatibility shims
+  (`NamedPropertyHandlerConfiguration`/`IndexedPropertyHandlerConfiguration`'s
+  private `ConvertSetter`/`ConvertDefiner` helpers) convert between the
+  old and new callback typedefs — which differ only in their
+  `PropertyCallbackInfo<void>` vs `PropertyCallbackInfo<Boolean>`
+  template argument — via a plain functional-style cast
+  (`return NamedPropertySetterCallbackV2(value);`, 4 call sites: both
+  `Named*` converters at lines 760/772, both mirrored `Indexed*`
+  converters at lines 887/899). Real, confirmed build failure on
+  `windows (x64)`'s real CI toolchain (`error: cast from
+  'NamedPropertySetterCallback' ... to 'NamedPropertySetterCallbackV2'
+  ... converts to incompatible function type
+  [-Werror,-Wcast-function-type-mismatch]`) — this fires just from
+  *including* `v8.h` (these are plain non-template static member
+  functions, type-checked at class-definition time, not deferred to
+  first use), so any embedder including V8's headers on a toolchain with
+  this warning enabled hits it, not just `lo`. Confirmed empirically in
+  this sandbox that neither a C-style/functional cast nor a *direct*
+  `reinterpret_cast` between the two function-pointer types silences
+  this specific warning — only routing through an intermediate `void*`
+  does (`reinterpret_cast<NamedPropertySetterCallbackV2>(reinterpret_cast<void*>(value))`),
+  the standard idiom for an intentional, ABI-safe function-pointer
+  reinterpretation that this specific clang warning's heuristic doesn't
+  otherwise recognize. Verified the isolated pattern compiles clean with
+  `-Wcast-function-type-mismatch -Werror` before trusting it. Linux/Mac
+  never reached this file in the same run (they died earlier on the two
+  patches above) — worth watching whether they hit this same error too
+  once those are pushed; not yet confirmed either way.
