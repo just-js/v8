@@ -814,9 +814,26 @@ jobs:
           New-Item -ItemType directory -Path v8/out.gn/${{ matrix.platform }}.release/
           Copy-Item "args.win.${{ matrix.platform }}.gn" -Destination "v8/out.gn/${{ matrix.platform }}.release/args.gn" -force
           Set-Location -Path v8
+          # PowerShell does NOT propagate a native (non-cmdlet) command's
+          # nonzero exit code as script/step failure by default - unlike
+          # bash, if `ninja` here fails, PowerShell just continues to the
+          # next line, and the step's own reported exit code reflects only
+          # the LAST command run (`gn args --list`, which trivially
+          # succeeds even though v8_monolith.lib was never produced). Real
+          # CI incident (2026-08-22): a genuine ninja compile failure got
+          # silently swallowed this way, and the workflow proceeded to
+          # "compress artifacts", which failed instead with a confusing
+          # "path does not exist" - masking the real error. Explicit
+          # $LASTEXITCODE checks after each native command are the
+          # standard fix; $ErrorActionPreference doesn't help here, it
+          # only affects PowerShell cmdlets' own terminating errors, not
+          # native executables' exit codes at all.
           gn gen out.gn/${{ matrix.platform }}.release
+          if ($LASTEXITCODE -ne 0) { Write-Error "gn gen failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
+          if ($LASTEXITCODE -ne 0) { Write-Error "ninja failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
           gn args --list out.gn/${{ matrix.platform }}.release
+          if ($LASTEXITCODE -ne 0) { Write-Error "gn args --list failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
       - name: compress artifacts
         shell: pwsh
         run: |
