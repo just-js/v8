@@ -136,39 +136,73 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   never reached this file in the same run (they died earlier on the two
   patches above) — worth watching whether they hit this same error too
   once those are pushed; not yet confirmed either way.
-- **[`14.9-disable-safe-libcxx-windows-torque-offset-fix.patch`](14.9-disable-safe-libcxx-windows-torque-offset-fix.patch)**
-  — **an untested hypothesis, not a confirmed fix yet** (2026-08-22).
-  Targets the real, unresolved Windows Torque/`JSAtomicsMutex` bug
-  documented in `PLAN.md` task 40: a `static_assert` in
+- **[`14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven`](14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven)**
+  — **tried, disproven, parked** (2026-08-22) — renamed out of the
+  `*.patch` glob like the obsolete ones above, but for a different
+  reason: this isn't superseded by an upstream fix, it's a tested
+  hypothesis that turned out to be wrong, kept because it may still be
+  useful reference if a related libc++-on-Windows issue comes up later.
+  Targeted the real,
+  unresolved Windows Torque/`JSAtomicsMutex` bug documented in
+  `PLAN.md` task 40: a `static_assert` in
   `gen/torque-generated/src/objects/js-atomics-synchronization-tq.cc`
   fails because Torque's own internally-computed field offset for
   `JSAtomicsMutex::owner_thread_id_` (40) doesn't match what the real
   compiler produces via `offsetof()` (36) — Windows-only, root-caused to
   upstream commit `756c6901c3` ("Port `AlwaysSharedSpaceJSObject`
-  subtree to `HeapObjectLayout`"), no upstream fix on this branch yet.
-  Real, confirmed structural finding this session: Windows is the *only*
-  platform in this build matrix with `use_custom_libcxx=true` (Linux/Mac
-  use their system STL entirely) — checked a real Linux job's actual
-  compile flags directly, `_LIBCPP_HARDENING_MODE` doesn't appear at
-  all, while Windows's real compile command shows
-  `_LIBCPP_HARDENING_MODE_EXTENSIVE`. Traced that define's own logic to
-  its exact source (`build/config/compiler/BUILD.gn`, the
-  chromium/src/build repo V8's `DEPS` pins):
-  `use_safe_libcxx = use_custom_libcxx && enable_safe_libcxx` controls
-  it — `EXTENSIVE` if true, `NONE` if false. `enable_safe_libcxx` itself
-  is set unconditionally to `true` in V8's own
-  `build_overrides/build.gni:37` (a plain assignment, not a
-  `declare_args()`, so `args.win.x64.gn` can't override it directly —
-  hence a patch instead). This patch flips it to `false`. Safe on the
-  other 3 platforms regardless of outcome: since they already have
-  `use_custom_libcxx=false`, `use_safe_libcxx` is already `false` there
-  regardless of `enable_safe_libcxx`'s value — this patch is a no-op
-  everywhere except Windows. **Whether hardening mode actually affects
-  `std::atomic<uint32_t>`'s/`<int32_t>`'s layout in V8's vendored libc++
-  version is not confirmed** — most libc++ hardening modes affect
-  containers/iterators, not atomics, so this is a real, testable, cheap
-  hypothesis (one CI run, no local Windows toolchain available to verify
-  ahead of time), not a reasoned-through certainty. If this doesn't fix
-  the static assertion, the next step is reading Torque's own C++
-  layout-computation source (`src/torque/`) directly rather than testing
-  more hypotheses one CI run at a time.
+  subtree to `HeapObjectLayout`"), no upstream fix on this branch.
+  Windows is the *only* platform in this build matrix with
+  `use_custom_libcxx=true` (confirmed: Linux's real compile flags don't
+  even mention `_LIBCPP_HARDENING_MODE`, Windows's show
+  `_LIBCPP_HARDENING_MODE_EXTENSIVE`), traced to
+  `use_safe_libcxx = use_custom_libcxx && enable_safe_libcxx`
+  (`build/config/compiler/BUILD.gn` in the pinned `chromium/src/build`
+  DEPS) with `enable_safe_libcxx` hardcoded `true` in V8's own
+  `build_overrides/build.gni:37`. Patch flipped it to `false` — pushed,
+  watched a real CI run
+  (https://github.com/just-js/v8/actions/runs/32551553356/job/96979028041):
+  confirmed the patch applied and `_LIBCPP_HARDENING_MODE_NONE` really
+  did take effect in the actual compile command, and the static
+  assertion still failed with the exact same offsets (`40 == 36`).
+  Clean negative result — libc++ hardening mode is not the cause.
+  Reverted rather than kept as a harmless no-op, since it wasn't
+  actually fixing anything. Next real lead: read Torque's own C++
+  layout-computation source (`src/torque/`) directly, or find an
+  existing upstream bug report for `756c6901c3` first.
+- **[`14.9-remove-jsatomicsmutex-offset-backcompat-shim.patch`](14.9-remove-jsatomicsmutex-offset-backcompat-shim.patch)**
+  — a real upstream fix, found and backported (2026-08-22), not
+  authored from scratch. Same task 40 bug as above (`branch-heads/14.9`
+  Windows Torque `static_assert` failure). Checked V8 mainline's history
+  for `src/objects/js-atomics-synchronization.h` past `756c6901c3`
+  (nothing on `branch-heads/14.9` itself, but mainline has moved on) and
+  found `6da197431106` ("[objects] Inline back-compat `Foo::kBarOffset`
+  shims", same bug ID `42202654` as the original root-cause commit) — a
+  ~180-file global refactor removing back-compat `static const int
+  Foo::kBarOffset` shims left over from the `HeapObjectLayout` port,
+  inlining `offsetof(Foo, bar_)` directly at each use site instead. Its
+  own commit message explains our exact failure mode: those shims were
+  `inline constexpr` symbols defined out-of-line (needed since
+  `offsetof`/`sizeof` can't run on a still-incomplete type inside the
+  class body) — a real C++ cross-translation-unit initialization-order
+  subtlety that apparently only manifests under MSVC-mode compilation.
+  Extracted and tested *only* the 2-file, ~30-line slice touching our
+  classes (`js-atomics-synchronization.h`/`-inl.h`) rather than
+  cherry-picking the full ~180-file commit — checked directly that the
+  small slice applies cleanly with full context against a fresh
+  `branch-heads/14.9` checkout (confirmed, not assumed) before deciding
+  against the full cherry-pick, which would very likely conflict given
+  how far `branch-heads/14.9` and mainline have diverged elsewhere over
+  two months of separate development for the other ~178 unrelated files.
+  **Real, open uncertainty**: our actual CI failure has *two* static
+  assertions — `JSAtomicsMutex::kOwnerThreadIdOffset` (this patch
+  directly addresses it) and `JSAtomicsCondition::kOptionalPaddingOffset`
+  (checked directly: no C++-side shim exists for this one anywhere in
+  the header or `-inl.h` — it's purely Torque-generated from the `.tq`
+  file's `@if(TAGGED_SIZE_8_BYTES) optional_padding: uint32;` field, so
+  this specific upstream commit doesn't touch it at all). Both fields
+  are the first-and-only field in their respective subclasses, right
+  after the same shared `JSSynchronizationPrimitive` base, and both show
+  the identical 4-byte discrepancy (40 vs 36) — suggestive that both
+  trace back to the same base-class offset computation and fixing one
+  might transitively fix the other, but **not confirmed** without an
+  actual compile. Not yet tested against real CI as of this write-up.
