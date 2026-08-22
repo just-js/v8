@@ -14,10 +14,11 @@ silently skipping it.
 per-platform or per-version selection mechanism (not needed yet; add one
 if a patch ever needs to apply to only some jobs).
 
-**To remove/disable a patch:** delete the file, or move it out of this
-directory (e.g. to a sibling `patches-parked/` if you want to keep it
-around without it being applied — no such directory exists yet, create
-one if this comes up). Simplest possible revert: `git rm patches/<name>.patch`.
+**To remove/disable a patch:** delete the file, or rename it out of the
+`*.patch` glob (e.g. append `.obsolete-at-<version>` — real precedent
+below, `14.7-bigint-missing-memory-include.patch.obsolete-at-14.9`) if
+you want to keep the file and its history around without it being
+applied. Simplest possible revert: `git rm patches/<name>.patch`.
 
 **Generating a new patch**, from a real before/after: `diff -u
 <upstream-file> <fixed-file> | sed 's|^--- <upstream-file>|--- a/<path/in/v8/tree>|; s|^+++ <fixed-file>|+++ b/<path/in/v8/tree>|'`
@@ -28,21 +29,26 @@ the right `a/`/`b/` format). Test it actually applies before committing:
 
 ## Current patches
 
-- **[`14.7-bigint-missing-memory-include.patch`](14.7-bigint-missing-memory-include.patch)**
-  — `src/bigint/bigint.h` at `branch-heads/14.7` is missing
+- **[`14.7-bigint-missing-memory-include.patch.obsolete-at-14.9`](14.7-bigint-missing-memory-include.patch.obsolete-at-14.9)**
+  — **obsolete, renamed out of the `*.patch` glob so it's no longer
+  applied, kept for reference/history rather than deleted.**
+  `src/bigint/bigint.h` at `branch-heads/14.7` was missing
   `#include <memory>` (uses `std::unique_ptr`/`std::make_unique_for_overwrite`
   without it) — real, confirmed build failure
   (`error: no template named 'unique_ptr' in namespace 'std'`), not
   guessed: diffed directly against V8 mainline, where the include exists
   (landed sometime after the 14.7 branch cut, not yet backported to that
-  branch). See `V8.md`'s 14.7 notes for the full story. Parking-lot note
-  for whoever revisits this at 14.8+: if 14.8 already has the include
-  upstream, this patch will fail to apply (the context won't match a
-  file that already has the line) — that's the signal to delete it, not
-  investigate further. **Confirmed still needed at 14.8** (applied
-  cleanly in the real CI run that surfaced the patch below, meaning
-  `branch-heads/14.8`'s `bigint.h` still lacks the include too) — left
-  in place.
+  branch at the time). See `V8.md`'s 14.7 notes for the full story.
+  Confirmed still needed at 14.8 (applied cleanly there). **The
+  parking-lot note written for this patch called it exactly**: bumping
+  to 14.9 (2026-08-22) broke it — real CI failure, all 5 platforms,
+  `error: patch failed: src/bigint/bigint.h:10` / `patch does not
+  apply` — and fetching `branch-heads/14.9`'s real `bigint.h` directly
+  confirmed why: upstream added `#include <memory>` itself somewhere
+  between 14.7 and 14.9, so the fix this patch was applying now already
+  exists in V8's own source. Not a broken patch, a superseded one.
+  Renamed rather than deleted so the history/reasoning stays discoverable
+  if a much later V8 version ever regresses the same include again.
 - **[`14.8-object-h-missing-nullptr-t.patch`](14.8-object-h-missing-nullptr-t.patch)**
   — `include/v8-object.h` at `branch-heads/14.8` uses a bare `nullptr_t`
   (`AccessorNameGetterCallback getter, nullptr_t setter = nullptr` at
