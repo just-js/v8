@@ -169,9 +169,11 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   actually fixing anything. Next real lead: read Torque's own C++
   layout-computation source (`src/torque/`) directly, or find an
   existing upstream bug report for `756c6901c3` first.
-- **[`14.9-remove-jsatomicsmutex-offset-backcompat-shim.patch`](14.9-remove-jsatomicsmutex-offset-backcompat-shim.patch)**
-  — a real upstream fix, found and backported (2026-08-22), not
-  authored from scratch. Same task 40 bug as above (`branch-heads/14.9`
+- **[`14.9-remove-jsatomicsmutex-offset-backcompat-shim.patch.disproven`](14.9-remove-jsatomicsmutex-offset-backcompat-shim.patch.disproven)**
+  — **tried, disproven, parked (2026-08-22)**, same treatment as the
+  hardening-mode patch above. A real upstream fix, found and backported,
+  not authored from scratch — but tested against real CI and it didn't
+  help. Same task 40 bug as above (`branch-heads/14.9`
   Windows Torque `static_assert` failure). Checked V8 mainline's history
   for `src/objects/js-atomics-synchronization.h` past `756c6901c3`
   (nothing on `branch-heads/14.9` itself, but mainline has moved on) and
@@ -204,5 +206,25 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   after the same shared `JSSynchronizationPrimitive` base, and both show
   the identical 4-byte discrepancy (40 vs 36) — suggestive that both
   trace back to the same base-class offset computation and fixing one
-  might transitively fix the other, but **not confirmed** without an
-  actual compile. Not yet tested against real CI as of this write-up.
+  might transitively fix the other.
+
+  **Tested against real CI, both predictions wrong**: pushed, watched
+  the run
+  (https://github.com/just-js/v8/actions/runs/32552556466/job/96981544753):
+  patch applied correctly, and **both** static assertions still failed,
+  byte-for-byte identical to before — including the exact one
+  (`JSAtomicsMutex::kOwnerThreadIdOffset`) this patch's C++-side symbol
+  removal directly targeted. Real, clarifying negative result: the
+  `static_assert` lives *inside* Torque-generated code
+  (`gen/torque-generated/.../js-atomics-synchronization-tq.cc`), and
+  since the `.tq` source itself was untouched by the backported
+  commit, removing the redundant C++ back-compat symbol never actually
+  touched whatever Torque's own compiler independently computes for its
+  side of the comparison. The upstream commit was a genuine fix for a
+  *different* problem (cleanup of now-redundant symbols left over from
+  the `HeapObjectLayout` port, for callers that used to need them) —
+  not this static assertion's actual root cause. That root cause lives
+  entirely inside Torque's own C++ compiler source (`src/torque/`),
+  untouched by either hypothesis tried so far. Parked alongside the
+  hardening-mode patch for the same reason: real, disproven lead, kept
+  for reference.

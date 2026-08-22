@@ -601,16 +601,20 @@ jobs:
   build-windows:
 #    if: ${{ false }}  # disable
     name: windows
-    # pinned, not windows-latest: that label now points at Windows
-    # Server 2025, which ships VS2026 - the pinned build/vs_toolchain.py
-    # this V8 branch checks out only recognizes 2022/2019/2017 (that's
-    # literally what its own "supported versions" error message lists),
-    # so it can't find a VS install it knows about even though one
-    # genuinely exists. Confirmed directly against vs_toolchain.py's
-    # real detection code and GitHub's own runner-images docs, not
-    # guessed. windows-2022 still ships VS2022 Enterprise at the
-    # standard path this script actually checks.
-    runs-on: windows-2022
+    # Switched to windows-2025 (VS2026) 2026-08-22, matching repos/lo's
+    # own Windows job. The previous windows-2022 pin's stated reason
+    # (vs_toolchain.py not recognizing VS2026) is now stale - checked
+    # directly against the exact build/ repo commit V8_VERSION's own
+    # DEPS actually pins (not guessed): its vs_toolchain.py already
+    # lists '2026' first in MSVS_VERSIONS ("The VS version in our
+    # packaged toolchain"), with real path/edition detection for it
+    # (MSVC_LOCATION, MSVC_EDITIONS including BuildTools). Also matches
+    # where upstream is actually heading: Chromium's own current build
+    # docs state VS2026 (>=18.0.0) is required now, not just supported,
+    # and Node.js added real VS2026 build support this session's own
+    # timeframe (nodejs/node#60727) - VS2022 is the aging option here,
+    # not VS2026 the risky one.
+    runs-on: windows-2025
     strategy:
       fail-fast: false
       matrix:
@@ -903,25 +907,14 @@ jobs:
       - name: build lo against freshly-built v8 (sanity test)
         shell: cmd
         run: |
-          rem this job's own runner is windows-2022 (pinned - V8's own
-          rem vs_toolchain.py doesn't recognize VS2026, see the
-          rem build-windows job comment above), unlike repos/lo's own
-          rem windows job which now targets windows-2025 for VS2026's
-          rem newer bundled clang-cl. build.cmd's own hardcoded
-          rem vcvars64.bat call points at VS2026's path
-          rem (...\18\Enterprise), which doesn't exist on this runner -
-          rem calling VS2022's real one first sets %WindowsSdkDir%,
-          rem which build.cmd's own call is guarded on
-          rem (if "%WindowsSdkDir%"=="" ...), so it skips its own
-          rem (wrong-for-this-runner) attempt. Prepending the standalone
-          rem LLVM 20.1.7 install GitHub's own runner images ship at
-          rem C:\Program Files\LLVM\bin (confirmed present on both
-          rem windows-2022 and windows-2025 via actions/runner-images
-          rem #12565) ahead of PATH gets clang++ >=20 without needing
-          rem VS2026 at all here - a second, independent test of
-          rem whether that's a viable alternative to the runner switch.
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          set PATH=C:\Program Files\LLVM\bin;%PATH%
+          rem This job now runs on windows-2025 (VS2026) itself, same as
+          rem repos/lo's own windows job - the VS2022-vcvars/standalone-
+          rem LLVM workaround this step used to need (when this job was
+          rem still pinned to windows-2022, a different runner than
+          rem build.cmd's own hardcoded VS2026 vcvars64.bat path expects)
+          rem is gone: build.cmd's own vcvars64.bat call now finds the
+          rem real thing directly, same as it already does in repos/lo's
+          rem own CI.
           cd lo
           call build.cmd
           rem build.cmd has no error propagation between its own internal
