@@ -136,3 +136,39 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   never reached this file in the same run (they died earlier on the two
   patches above) — worth watching whether they hit this same error too
   once those are pushed; not yet confirmed either way.
+- **[`14.9-disable-safe-libcxx-windows-torque-offset-fix.patch`](14.9-disable-safe-libcxx-windows-torque-offset-fix.patch)**
+  — **an untested hypothesis, not a confirmed fix yet** (2026-08-22).
+  Targets the real, unresolved Windows Torque/`JSAtomicsMutex` bug
+  documented in `PLAN.md` task 40: a `static_assert` in
+  `gen/torque-generated/src/objects/js-atomics-synchronization-tq.cc`
+  fails because Torque's own internally-computed field offset for
+  `JSAtomicsMutex::owner_thread_id_` (40) doesn't match what the real
+  compiler produces via `offsetof()` (36) — Windows-only, root-caused to
+  upstream commit `756c6901c3` ("Port `AlwaysSharedSpaceJSObject`
+  subtree to `HeapObjectLayout`"), no upstream fix on this branch yet.
+  Real, confirmed structural finding this session: Windows is the *only*
+  platform in this build matrix with `use_custom_libcxx=true` (Linux/Mac
+  use their system STL entirely) — checked a real Linux job's actual
+  compile flags directly, `_LIBCPP_HARDENING_MODE` doesn't appear at
+  all, while Windows's real compile command shows
+  `_LIBCPP_HARDENING_MODE_EXTENSIVE`. Traced that define's own logic to
+  its exact source (`build/config/compiler/BUILD.gn`, the
+  chromium/src/build repo V8's `DEPS` pins):
+  `use_safe_libcxx = use_custom_libcxx && enable_safe_libcxx` controls
+  it — `EXTENSIVE` if true, `NONE` if false. `enable_safe_libcxx` itself
+  is set unconditionally to `true` in V8's own
+  `build_overrides/build.gni:37` (a plain assignment, not a
+  `declare_args()`, so `args.win.x64.gn` can't override it directly —
+  hence a patch instead). This patch flips it to `false`. Safe on the
+  other 3 platforms regardless of outcome: since they already have
+  `use_custom_libcxx=false`, `use_safe_libcxx` is already `false` there
+  regardless of `enable_safe_libcxx`'s value — this patch is a no-op
+  everywhere except Windows. **Whether hardening mode actually affects
+  `std::atomic<uint32_t>`'s/`<int32_t>`'s layout in V8's vendored libc++
+  version is not confirmed** — most libc++ hardening modes affect
+  containers/iterators, not atomics, so this is a real, testable, cheap
+  hypothesis (one CI run, no local Windows toolchain available to verify
+  ahead of time), not a reasoned-through certainty. If this doesn't fix
+  the static assertion, the next step is reading Torque's own C++
+  layout-computation source (`src/torque/`) directly rather than testing
+  more hypotheses one CI run at a time.
