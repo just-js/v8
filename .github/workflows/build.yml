@@ -137,10 +137,24 @@ jobs:
           cp -r ${{ github.workspace }}/v8/include lo/v8/include
           touch lo/v8/.stamp lo/v8/include/.stamp
           cp ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      # Dockerfile.ubuntu's own first RUN pulls LLVM 22 fresh from
+      # apt.llvm.org every single build - with no caching, that happened
+      # on every CI run, which is the actual reason this step is exposed
+      # to apt.llvm.org network flakiness at all (real CI failures hit
+      # this directly - see V8-LIBCXX-CLANG-FLOOR.md in the claude
+      # sandbox repo). Caching the built image layers via buildx's GHA
+      # backend, keyed per-platform (x64/arm64 images differ), means the
+      # LLVM install only actually runs again when Dockerfile.ubuntu
+      # itself changes.
+      - name: setup docker buildx (sanity test)
+        uses: docker/setup-buildx-action@v3
       - name: build lo against freshly-built v8 (sanity test)
         run: |
           cd lo
-          docker build -t lo-glibc -f docker/Dockerfile.ubuntu .
+          docker buildx build --load \
+            --cache-from type=gha,scope=lo-glibc-${{ matrix.platform }} \
+            --cache-to type=gha,mode=max,scope=lo-glibc-${{ matrix.platform }} \
+            -t lo-glibc -f docker/Dockerfile.ubuntu .
           docker run --rm -v "$(pwd):/src" -w /src lo-glibc make ARCH=${{ matrix.platform }} lo
           if [ ! -f lo ]; then
             echo "lo was not produced"
@@ -404,10 +418,24 @@ jobs:
           cp -r ${{ github.workspace }}/v8/include lo/v8/include
           touch lo/v8/.stamp lo/v8/include/.stamp
           cp ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      # Dockerfile.ubuntu's own first RUN pulls LLVM 22 fresh from
+      # apt.llvm.org every single build - with no caching, that happened
+      # on every CI run, which is the actual reason this step is exposed
+      # to apt.llvm.org network flakiness at all (real CI failures hit
+      # this directly - see V8-LIBCXX-CLANG-FLOOR.md in the claude
+      # sandbox repo). Caching the built image layers via buildx's GHA
+      # backend, keyed per-platform (x64/arm64 images differ), means the
+      # LLVM install only actually runs again when Dockerfile.ubuntu
+      # itself changes.
+      - name: setup docker buildx (sanity test)
+        uses: docker/setup-buildx-action@v3
       - name: build lo against freshly-built v8 (sanity test)
         run: |
           cd lo
-          docker build -t lo-glibc -f docker/Dockerfile.ubuntu .
+          docker buildx build --load \
+            --cache-from type=gha,scope=lo-glibc-${{ matrix.platform }} \
+            --cache-to type=gha,mode=max,scope=lo-glibc-${{ matrix.platform }} \
+            -t lo-glibc -f docker/Dockerfile.ubuntu .
           docker run --rm -v "$(pwd):/src" -w /src lo-glibc make ARCH=${{ matrix.platform }} lo
           if [ ! -f lo ]; then
             echo "lo was not produced"
