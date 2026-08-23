@@ -33,3 +33,11 @@ v8_monolithic=true
 v8_target_cpu="x64"
 v8_use_external_startup_data=false
 v8_enable_backtrace = false
+# cppgc's own caged heap is a separate reservation from
+# v8_enable_sandbox/v8_enable_pointer_compression above - defaults on
+# for every 64bit arch regardless, reserving 16GB of PROT_NONE virtual
+# address space at V8::Initialize() time unconditionally. lo never
+# creates a CppHeap, so this is pure unused overhead. Full rationale:
+# args.linux.x64.gn.
+cppgc_enable_caged_heap=false
+cppgc_enable_pointer_compression=false

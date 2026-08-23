@@ -26,3 +26,17 @@ v8_monolithic=true
 v8_target_cpu="x64"
 v8_use_external_startup_data=false
 v8_enable_backtrace = false
+# cppgc's own caged heap is a separate reservation from v8_enable_sandbox/
+# v8_enable_pointer_compression above (both already off) - it defaults on
+# for every 64bit arch regardless, and with pointer compression + the
+# larger-cage variant, reserves a 16GB PROT_NONE region at V8::Initialize()
+# time, unconditionally, even though lo never creates a CppHeap (checked:
+# no CppHeap/cppgc:: references anywhere in lo.cc/lo.h). Confirmed safe to
+# disable directly against V8's own BUILD.gn: no assert blocks turning
+# this off on 64bit (the only assert guards the reverse, 32bit), and
+# cppgc_enable_pointer_compression only turns on inside the
+# `if (cppgc_enable_caged_heap)` block, so it cleanly follows. Real-world
+# validated too: Node v22.19.0 (musl x64, same environment shape as this
+# build) runs with no such reservation at all.
+cppgc_enable_caged_heap=false
+cppgc_enable_pointer_compression=false

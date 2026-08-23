@@ -28,3 +28,11 @@ v8_enable_test_features=false
 mac_sdk_path="/Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk"
 #mac_sdk_path="/Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
 v8_enable_backtrace = false
+# cppgc's own caged heap is a separate reservation from
+# v8_enable_sandbox/v8_enable_pointer_compression above - defaults on
+# for every 64bit arch regardless, reserving 16GB of PROT_NONE virtual
+# address space at V8::Initialize() time unconditionally. lo never
+# creates a CppHeap, so this is pure unused overhead. Full rationale:
+# args.linux.x64.gn.
+cppgc_enable_caged_heap=false
+cppgc_enable_pointer_compression=false
