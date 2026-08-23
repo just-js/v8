@@ -40,3 +40,13 @@ v8_enable_backtrace = false
 # build) runs with no such reservation at all.
 cppgc_enable_caged_heap=false
 cppgc_enable_pointer_compression=false
+# v8_enable_partition_alloc defaults to true once
+# v8_enable_pointer_compression_shared_cage is true (which itself
+# defaults to mirroring v8_enable_pointer_compression above) - pulls in
+# third_party/partition_alloc, whose safe_strerror.cc/stack_trace_posix.cc
+# reference glibc-only symbols (__strncat_chk, __memmove_chk, pread64)
+# that musl doesn't provide - real local link failure under
+# MUSL=1 ./rebuild.sh. Not something we were trying to change - pin off
+# explicitly, same as the mac args files (real CI failure there:
+# run 32610257944, partition_alloc's allocator shim vs. Xcode SDK).
+v8_enable_partition_alloc=false

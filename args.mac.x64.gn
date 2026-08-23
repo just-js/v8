@@ -36,3 +36,15 @@ v8_enable_backtrace = false
 # args.linux.x64.gn.
 cppgc_enable_caged_heap=false
 cppgc_enable_pointer_compression=false
+# v8_enable_partition_alloc defaults to true once
+# v8_enable_pointer_compression_shared_cage is true (which itself
+# defaults to mirroring v8_enable_pointer_compression above) - pulls in
+# third_party/partition_alloc's allocator shim, whose
+# -fvisibility-global-new-delete=force-hidden conflicts with Xcode
+# 16.4/MacOSX15.5 SDK's own operator new/delete visibility declarations
+# in <new> (real CI failure: run 32610257944, "visibility does not
+# match previous declaration" compiling
+# partition_alloc/shim/allocator_shim_dispatch_to_noop_on_free.cc).
+# Not something we were trying to change - pin off explicitly to keep
+# pointer compression itself on without pulling this in.
+v8_enable_partition_alloc=false
