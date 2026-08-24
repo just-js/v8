@@ -12,7 +12,7 @@ defaults:
 jobs:
 
   build-linux-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable - testing mac fix, linux/windows already covered by the 15.1 run in progress
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -219,7 +219,7 @@ jobs:
           '
 
   build-linux-arm64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable - testing mac fix, linux/windows already covered by the 15.1 run in progress
     name: linux
     runs-on: ubuntu-22.04-arm
     strategy:
@@ -495,6 +495,11 @@ jobs:
 #    if: ${{ false }}  # disable
     name: mac
     runs-on: macos-15
+    env:
+      # Pins the SDK/Xcode version the build resolves against (args.mac.*.gn
+      # deliberately leave mac_sdk_path unset - see V8-MAC.md). Update this
+      # if/when we deliberately want to move to a newer Xcode.
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     strategy:
       fail-fast: false
       matrix:
@@ -627,7 +632,7 @@ jobs:
           cat smoketest-out.txt
 
   build-windows:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable - testing mac fix, linux/windows already covered by the 15.1 run in progress
     name: windows
     # Switched to windows-2025 (VS2026) 2026-08-22, matching repos/lo's
     # own Windows job. The previous windows-2022 pin's stated reason

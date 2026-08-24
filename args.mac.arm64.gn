@@ -25,8 +25,13 @@ v8_enable_i18n_support=false
 v8_enable_pointer_compression=true
 v8_enable_sandbox=false
 v8_enable_test_features=false
-mac_sdk_path="/Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk"
-#mac_sdk_path="/Applications/Xcode_16.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk"
+# SDK version is pinned via DEVELOPER_DIR in build.yml's build-mac job,
+# not here - setting mac_sdk_path directly makes GN treat it as a raw
+# absolute path outside root_build_dir, which build/config/mac/BUILD.gn's
+# sdk_inputs action rejects as of the build.git pin V8 15.1 uses
+# ("File is not inside output directory"). Leaving this unset lets
+# mac_sdk.gni's own resolution + symlink-into-root_build_dir logic run
+# as intended. Full writeup: V8-MAC.md.
 v8_enable_backtrace = false
 # cppgc's own caged heap is a separate reservation from
 # v8_enable_sandbox/v8_enable_pointer_compression above - defaults on
