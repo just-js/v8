@@ -101,12 +101,20 @@ const gclientJobs = process.env.GCLIENT_JOBS || '4'
 if (!existsSync(V8_DIR)) {
   run('fetch', ['v8'], { cwd: REPO_ROOT, env })
   run('git', ['checkout', `branch-heads/${v8Version}`], { cwd: V8_DIR, env })
-  run('gclient', ['sync', '-j', gclientJobs], { cwd: V8_DIR, env })
 } else {
   console.log(`\n${V8_DIR} already exists - resetting to a clean branch-heads/${v8Version} instead of re-fetching`)
   run('git', ['checkout', '-f', `branch-heads/${v8Version}`], { cwd: V8_DIR, env })
   run('git', ['clean', '-fd'], { cwd: V8_DIR, env })
 }
+// Always (not just on a fresh clone): `gclient sync` is meant to be safely
+// re-runnable, no-opping on anything already up to date - and skipping it
+// here on a pre-existing V8_DIR is a real bug this session hit for real:
+// a prior run's `fetch v8` can leave V8_DIR present but its own internal
+// sync incomplete (e.g. the gsutil lock contention above), silently
+// missing DEPS-fetched tools like buildtools/mac/gn/gn - `gn gen` then
+// fails with a confusing "could not find gn executable", not an obvious
+// sync error.
+run('gclient', ['sync', '-j', gclientJobs], { cwd: V8_DIR, env })
 
 // --- patches ---
 const patches = existsSync(PATCHES_DIR)
