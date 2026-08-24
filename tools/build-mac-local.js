@@ -87,10 +87,21 @@ if (!existsSync(DEPOT_TOOLS_DIR)) {
 run('gclient', [], { cwd: REPO_ROOT, env })
 
 // --- v8 checkout ---
+// gclient defaults to 16 parallel jobs - fine for CI's network/disk, but
+// real-machine `gsutil` lockfile contention under that many concurrent
+// third_party dep syncs is a known flaky spot depot_tools itself has open
+// issues about (confirmed hit locally: BlockingIOError on
+// depot_tools/external_bin/gsutil's lockfile). Lower by default here;
+// override with GCLIENT_JOBS if this machine can handle more (or needs
+// fewer). Only applied to this script's own explicit sync below - not to
+// `fetch v8`'s first sync, since it's unconfirmed whether depot_tools'
+// `fetch` wrapper forwards -j through to the gclient sync it runs
+// internally.
+const gclientJobs = process.env.GCLIENT_JOBS || '4'
 if (!existsSync(V8_DIR)) {
   run('fetch', ['v8'], { cwd: REPO_ROOT, env })
   run('git', ['checkout', `branch-heads/${v8Version}`], { cwd: V8_DIR, env })
-  run('gclient', ['sync'], { cwd: V8_DIR, env })
+  run('gclient', ['sync', '-j', gclientJobs], { cwd: V8_DIR, env })
 } else {
   console.log(`\n${V8_DIR} already exists - resetting to a clean branch-heads/${v8Version} instead of re-fetching`)
   run('git', ['checkout', '-f', `branch-heads/${v8Version}`], { cwd: V8_DIR, env })
