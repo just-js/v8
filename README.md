@@ -54,6 +54,59 @@ one. Small unified-diff patches for known-bad branch-heads live in
 job right before compiling - see [`patches/README.md`](patches/README.md)
 for the mechanism and the current list of what's patched and why.
 
+## local dev tools
+
+Node ESM scripts (no deps) under [`tools/`](tools/) for checking things
+locally instead of waiting on/consuming a GitHub Actions run:
+
+- **[`tools/check-patches.js`](tools/check-patches.js)** - before bumping
+  `V8_VERSION`, checks whether every patch in [`patches/`](patches/)
+  still applies cleanly against a target version's real source (fetched
+  straight from `raw.githubusercontent.com/v8/v8`, no full V8 clone) -
+  catches a patch going obsolete/context-drifted in seconds instead of a
+  full CI round-trip.
+  ```
+  node tools/check-patches.js 15.1
+  ```
+- **[`tools/build-mac-local.js`](tools/build-mac-local.js)** - macOS
+  only. Mirrors `build.yml`'s `build-mac` job step-for-step (depot_tools
+  clone/reset, `fetch v8` + checkout `branch-heads/<version>`, apply
+  `patches/*.patch`, `gn gen` + `ninja v8_monolith`/`d8`) on real Mac
+  hardware. Also builds `d8` and regenerates a repo-root
+  `compile_commands.json` (editor tooling) each run. Doesn't force a
+  `DEVELOPER_DIR` by default - unlike CI's GitHub-runner-image-specific
+  pin, this just uses whatever Xcode `xcode-select` already resolves;
+  set `DEVELOPER_DIR` yourself first to pin a specific one. Re-running is
+  safe (resets, not re-clones, depot_tools; force-checks-out `v8` back to
+  a clean `branch-heads/<version>` before reapplying patches).
+  ```
+  node tools/build-mac-local.js arm64        # or x64, defaults to 15.1
+  node tools/build-mac-local.js arm64 15.1
+  ```
+- **[`tools/build-verify.js`](tools/build-verify.js)** - macOS only.
+  Downloads a real `just-js/lo` checkout (default `main`, or pass a
+  branch/tag/commit sha) and builds it against whatever
+  `build-mac-local.js` just produced, running the same checks
+  `build.yml`'s `build-mac` job's sanity-test steps do (stage the v8
+  headers/static lib into `lo`'s expected layout, `make lo`, run a real
+  smoke test checking both exit code and output) - so a local V8 change
+  can be verified against a real `lo` build end-to-end. `lo-verify/` is a
+  disposable scratch checkout this script owns (a fresh tarball
+  extraction every run); safe to delete.
+  ```
+  node tools/build-verify.js arm64              # lo@main
+  node tools/build-verify.js arm64 my-branch
+  node tools/build-verify.js arm64 3f9a1c2      # a commit sha
+  node tools/build-verify.js arm64 main --check # + `make check`/`check-build`
+  ```
+  `--check` additionally runs `lo`'s own `make check` (runtime sanity
+  tests) and `make check-build` (`test/build.js`) - broader than the
+  single eval smoke test, off by default since they're slower.
+  Linux/Windows equivalents aren't built yet - `build.yml`'s own linux
+  job builds `lo` via Docker (`docker/Dockerfile.ubuntu`/`.alpine`) and
+  its windows job via `build.cmd`/PowerShell staging, different enough
+  from the mac path to be their own follow-up.
+
 ## planned
 
 - riscv64
