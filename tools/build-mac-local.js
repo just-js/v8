@@ -14,7 +14,7 @@
 // (undoing any previously-applied patches) before patches are re-applied,
 // so repeated runs start from the same clean state CI would.
 
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readdirSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 
@@ -22,9 +22,6 @@ const REPO_ROOT = new URL('..', import.meta.url).pathname
 const PATCHES_DIR = join(REPO_ROOT, 'patches')
 const DEPOT_TOOLS_DIR = join(REPO_ROOT, 'depot_tools')
 const V8_DIR = join(REPO_ROOT, 'v8')
-
-// Matches build.yml's build-mac job env - keep in sync if that changes.
-const DEFAULT_DEVELOPER_DIR = '/Applications/Xcode_16.4.app/Contents/Developer'
 
 function usageAndExit () {
   console.error('usage: node tools/build-mac-local.js <x64|arm64> [v8-version]')
@@ -49,12 +46,36 @@ function run (cmd, args, opts = {}) {
   }
 }
 
+// Same as run(), but returns captured stdout instead of streaming it -
+// for commands whose output we need to write to a file (e.g. `-t compdb`).
+function runCapture (cmd, args, opts = {}) {
+  console.log(`\n$ ${cmd} ${args.join(' ')}${opts.cwd ? `  (in ${opts.cwd})` : ''}`)
+  const result = spawnSync(cmd, args, { stdio: ['inherit', 'pipe', 'inherit'], encoding: 'utf8', ...opts })
+  if (result.status !== 0) {
+    console.error(`\nfailed: ${cmd} ${args.join(' ')} (exit ${result.status})`)
+    process.exit(result.status ?? 1)
+  }
+  return result.stdout
+}
+
+// Unlike build.yml's build-mac job (which pins a specific GitHub-runner-
+// image path, e.g. /Applications/Xcode_16.4.app - a CI-image-only naming
+// convention), this script doesn't force a DEVELOPER_DIR by default: a
+// normal Mac just has one /Applications/Xcode.app, and hardcoding a
+// versioned CI path here broke even depot_tools' own `gclient` bootstrap
+// (its xcrun calls) before the real V8 build steps were reached. Set
+// DEVELOPER_DIR yourself in the environment if you want to pin a specific
+// Xcode; otherwise this uses whatever `xcode-select` already resolves.
 const env = {
   ...process.env,
-  PATH: `${DEPOT_TOOLS_DIR}:${process.env.PATH}`,
-  DEVELOPER_DIR: process.env.DEVELOPER_DIR || DEFAULT_DEVELOPER_DIR
+  PATH: `${DEPOT_TOOLS_DIR}:${process.env.PATH}`
 }
-console.log(`DEVELOPER_DIR=${env.DEVELOPER_DIR}`)
+if (env.DEVELOPER_DIR) {
+  console.log(`DEVELOPER_DIR=${env.DEVELOPER_DIR} (from environment)`)
+} else {
+  const xcodeSelect = spawnSync('xcode-select', ['-p'], { encoding: 'utf8' })
+  console.log(`DEVELOPER_DIR not set - using xcode-select's default: ${xcodeSelect.stdout?.trim() || '(unknown)'}`)
+}
 
 // --- depot_tools ---
 if (!existsSync(DEPOT_TOOLS_DIR)) {
@@ -91,6 +112,14 @@ run('mkdir', ['-p', outDir], { cwd: V8_DIR, env })
 run('cp', [join(REPO_ROOT, `args.mac.${platform}.gn`), join(outDir, 'args.gn')], { cwd: V8_DIR, env })
 run('gn', ['gen', outDir], { cwd: V8_DIR, env })
 run('ninja', ['v8_monolith', '-C', outDir], { cwd: V8_DIR, env })
+run('ninja', ['d8', '-C', outDir], { cwd: V8_DIR, env })
 run('gn', ['args', '--list', outDir], { cwd: V8_DIR, env })
 
+// compile_commands.json, for editor tooling (clangd etc) - regenerated
+// from scratch each run, so it always matches whatever's in outDir now.
+const compdb = runCapture('ninja', ['-C', outDir, '-t', 'compdb', 'cxx', 'cc'], { cwd: V8_DIR, env })
+writeFileSync(join(REPO_ROOT, 'compile_commands.json'), compdb)
+
 console.log(`\nbuilt: ${join(V8_DIR, outDir, 'obj/libv8_monolith.a')}`)
+console.log(`built: ${join(V8_DIR, outDir, 'd8')}`)
+console.log(`wrote: ${join(REPO_ROOT, 'compile_commands.json')}`)
