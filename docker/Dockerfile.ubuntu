@@ -1,0 +1,44 @@
+# glibc build environment for V8, matching build.yml's build-linux-x64/
+# build-linux-arm64 jobs' real ubuntu-22.04 runner as closely as
+# possible. Same pattern as repos/lo's own docker/Dockerfile.ubuntu:
+# environment only, no source COPY, no build baked into `docker build`
+# itself - mount repos/v8 in and run tools/build-linux-local.js against
+# it, so build artifacts land in your working tree, not buried in a
+# container layer.
+#
+#   docker build -t v8-linux -f docker/Dockerfile.ubuntu .
+#   docker run --rm -v "$(pwd):/src" -w /src v8-linux node tools/build-linux-local.js x64
+#   docker run --rm -v "$(pwd):/src" -w /src v8-linux node tools/build-linux-local.js arm64
+#
+# Architecture: written to be arch-agnostic on purpose (no hardcoded
+# amd64 paths/package names), same reasoning as repos/lo's own
+# Dockerfile.ubuntu - `docker build`/`docker run` on an arm64 host (e.g.
+# Docker Desktop on Apple Silicon) pulls the arm64 variant of
+# `ubuntu:22.04` and the arm64 Node/depot_tools binaries automatically,
+# no separate arm64-specific Dockerfile needed.
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Same list as ../install-deps.sh (the bare-metal equivalent of this
+# image) plus Node itself, which install-deps.sh doesn't need to install
+# on a real dev machine but this container does, to run
+# tools/build-linux-local.js at all.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git python3 curl ca-certificates lsb-release build-essential gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ubuntu 22.04's own apt `nodejs` package (v12.x) predates this repo's
+# scripts' ESM syntax (plain `import`/`export` in a .js file with no
+# package.json "type": "module" - relies on Node's module-syntax
+# auto-detection, stabilized around Node 22, not present in anything
+# close to v12). NodeSource's setup script for a current LTS instead,
+# same "need something newer than the base image ships" shape as
+# repos/lo's own Dockerfile.ubuntu using apt.llvm.org instead of the
+# base image's clang.
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src

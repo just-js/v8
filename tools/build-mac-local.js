@@ -7,7 +7,7 @@
 //
 // Usage: node tools/build-mac-local.js <x64|arm64> [v8-version]
 //   e.g. node tools/build-mac-local.js arm64
-//        node tools/build-mac-local.js arm64 15.1
+//        node tools/build-mac-local.js arm64 15.2
 //
 // Re-running is safe: depot_tools is reset (not re-cloned) if present,
 // and the v8 checkout is force-checked-out back to branch-heads/<version>
@@ -30,7 +30,7 @@ function usageAndExit () {
 
 const platform = process.argv[2]
 if (platform !== 'x64' && platform !== 'arm64') usageAndExit()
-const v8Version = process.argv[3] || '15.1'
+const v8Version = process.argv[3] || '15.2'
 
 if (process.platform !== 'darwin') {
   console.error(`this must run on macOS (detected: ${process.platform})`)

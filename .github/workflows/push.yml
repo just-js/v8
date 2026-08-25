@@ -1,5 +1,8 @@
 name: build and publish v8 libs
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   build:

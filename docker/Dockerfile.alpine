@@ -1,0 +1,60 @@
+# musl/Alpine build environment for V8 ITSELF - NOT the same thing as
+# repos/lo's own docker/Dockerfile.alpine, which never compiles V8 at
+# all (it links lo.cc against a prebuilt *glibc* libv8_monolith.a via a
+# C-symbol shim - see ../../LO-MUSL.md/../../C++.md). This is a real,
+# first attempt at getting V8's own build to run under musl, which
+# nothing in this project has done before - genuinely experimental, not
+# a proven recipe like Dockerfile.ubuntu. Expect this to need iteration
+# (same "one real failure at a time" discipline repos/lo's own musl
+# bring-up used - see LO-MUSL.md's history) rather than assume it just
+# works.
+#
+#   docker build -t v8-alpine -f docker/Dockerfile.alpine .
+#   docker run --rm -v "$(pwd):/src" -w /src v8-alpine node tools/build-linux-local.js x64
+#
+# Known, real, NOT-yet-resolved risks going in (reasoned through from
+# source, not tested):
+#
+# 1. Chromium's own hermetic build tools (gn, ninja, clang - all fetched
+#    via `gclient sync` from Google Cloud Storage per repos/v8's DEPS,
+#    the same "chromium-browser-clang" bucket confirmed in LO.md's own
+#    toolchain matrix) are prebuilt ELF binaries, almost certainly linked
+#    against glibc (built on Google's own Debian/Ubuntu infra) - not
+#    musl. A glibc-dynamically-linked binary won't run on bare Alpine at
+#    all (the dynamic loader itself is different) unless something
+#    bridges the gap. `gcompat` (installed below) is Alpine's own glibc-
+#    compatibility shim and is the standard fix for exactly this class of
+#    problem - but it's a shim, not full glibc, and hasn't been confirmed
+#    sufficient for gn/ninja/clang specifically. If `gclient sync`/`gn
+#    gen` fails with something like "No such file or directory" on a
+#    binary that visibly exists, this is almost certainly why - check
+#    `file <binary>`'s interpreter and `ldd <binary>` first.
+# 2. v8/build/install-build-deps.sh (V8's own dependency-install script)
+#    is apt-based and does not run on Alpine at all - deliberately
+#    skipped by tools/build-linux-local.js when apt-get isn't found
+#    (falls through with a warning). Whatever it would have installed on
+#    a real Ubuntu host isn't provided here except via this image's own
+#    package list below, which is a guess grounded in repos/lo's own
+#    musl bring-up (LO-MUSL.md), not confirmed sufficient for V8's own
+#    (much larger) build.
+# 3. args.linux.x64.gn/args.linux.arm64.gn are unmodified - `use_sysroot
+#    =false` means V8 compiles directly against whatever "system" headers
+#    this container provides, i.e. musl's, for the first time ever in
+#    this project. Genuinely unknown whether V8's own source (a huge
+#    codebase, glibc-oriented in many places - the same category of gap
+#    repos/lo's musl-glibc-compat.c exists for, just at V8's own scale
+#    instead of lo's) compiles clean against musl headers at all.
+#
+# None of the above is a reason not to try - it's the reason to expect
+# the first real run to fail at one of these three points, and to treat
+# whichever one it is as the next real thing to fix, not a surprise.
+
+FROM alpine:3.23
+
+RUN apk add --no-cache \
+    git python3 curl ca-certificates bash \
+    build-base linux-headers \
+    gcompat \
+    nodejs npm
+
+WORKDIR /src

@@ -6,40 +6,40 @@ contributions are welcome!
 
 # current release
 
-- [tag](https://github.com/just-js/v8/releases/tag/15.1)
-- [v8 headers](https://github.com/just-js/v8/releases/download/15.1/include.tar.gz)
-- [v8 source](https://github.com/just-js/v8/releases/download/15.1/src.tar.gz)
+- [tag](https://github.com/just-js/v8/releases/tag/15.2)
+- [v8 headers](https://github.com/just-js/v8/releases/download/15.2/include.tar.gz)
+- [v8 source](https://github.com/just-js/v8/releases/download/15.2/src.tar.gz)
 
 ## linux x64 ✅
 
-- [static libraries](https://github.com/just-js/v8/releases/download/15.1/libv8_monolith-linux-x64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/15.2/libv8_monolith-linux-x64.a.gz)
 - [build args](args.linux.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/15.1/gen-linux-x64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/15.2/gen-linux-x64.tar.gz)
 
 ## linux arm64 ✅
 
-- [static libraries](https://github.com/just-js/v8/releases/download/15.1/libv8_monolith-linux-arm64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/15.2/libv8_monolith-linux-arm64.a.gz)
 - [build args](args.linux.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/15.1/gen-linux-arm64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/15.2/gen-linux-arm64.tar.gz)
 
 ## macos x64 ✅
 
-- [static libraries](https://github.com/just-js/v8/releases/download/15.1/libv8_monolith-mac-x64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/15.2/libv8_monolith-mac-x64.a.gz)
 - [build args](args.mac.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/15.1/gen-mac-x64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/15.2/gen-mac-x64.tar.gz)
 
 ## macos arm64 ✅
 
-- [static libraries](https://github.com/just-js/v8/releases/download/15.1/libv8_monolith-mac-arm64.a.gz)
+- [static libraries](https://github.com/just-js/v8/releases/download/15.2/libv8_monolith-mac-arm64.a.gz)
 - [build args](args.mac.arm64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/15.1/gen-mac-arm64.tar.gz)
+- [generated source code](https://github.com/just-js/v8/releases/download/15.2/gen-mac-arm64.tar.gz)
 
 ## windows x64 ✅
 
-- [static library](https://github.com/just-js/v8/releases/download/15.1/libv8_monolith-win-x64.zip)
+- [static library](https://github.com/just-js/v8/releases/download/15.2/libv8_monolith-win-x64.zip)
 - [build args](args.win.x64.gn)
-- [generated source code](https://github.com/just-js/v8/releases/download/15.1/gen-win-x64.zip)
-- [libc++ headers](https://github.com/just-js/v8/releases/download/15.1/libcxx-headers-win-x64.zip)
+- [generated source code](https://github.com/just-js/v8/releases/download/15.2/gen-win-x64.zip)
+- [libc++ headers](https://github.com/just-js/v8/releases/download/15.2/libcxx-headers-win-x64.zip)
 
 ## patches
 
@@ -66,7 +66,7 @@ locally instead of waiting on/consuming a GitHub Actions run:
   catches a patch going obsolete/context-drifted in seconds instead of a
   full CI round-trip.
   ```
-  node tools/check-patches.js 15.1
+  node tools/check-patches.js 15.2
   ```
 - **[`tools/build-mac-local.js`](tools/build-mac-local.js)** - macOS
   only. Mirrors `build.yml`'s `build-mac` job step-for-step (depot_tools
@@ -80,8 +80,8 @@ locally instead of waiting on/consuming a GitHub Actions run:
   safe (resets, not re-clones, depot_tools; force-checks-out `v8` back to
   a clean `branch-heads/<version>` before reapplying patches).
   ```
-  node tools/build-mac-local.js arm64        # or x64, defaults to 15.1
-  node tools/build-mac-local.js arm64 15.1
+  node tools/build-mac-local.js arm64        # or x64, defaults to 15.2
+  node tools/build-mac-local.js arm64 15.2
   ```
 - **[`tools/build-verify.js`](tools/build-verify.js)** - macOS only.
   Downloads a real `just-js/lo` checkout (default `main`, or pass a
@@ -102,10 +102,86 @@ locally instead of waiting on/consuming a GitHub Actions run:
   `--check` additionally runs `lo`'s own `make check` (runtime sanity
   tests) and `make check-build` (`test/build.js`) - broader than the
   single eval smoke test, off by default since they're slower.
-  Linux/Windows equivalents aren't built yet - `build.yml`'s own linux
-  job builds `lo` via Docker (`docker/Dockerfile.ubuntu`/`.alpine`) and
-  its windows job via `build.cmd`/PowerShell staging, different enough
-  from the mac path to be their own follow-up.
+  Linux/Windows equivalents of *this* script aren't built yet -
+  `build.yml`'s own linux job builds `lo` via Docker
+  (`docker/Dockerfile.ubuntu`/`.alpine`) and its windows job via
+  `build.cmd`/PowerShell staging, different enough from the mac path to
+  be their own follow-up.
+- **[`install-deps.sh`](install-deps.sh)** - Linux only, Debian/Ubuntu
+  (`apt-get`-based). Installs the host-level prerequisites building V8
+  locally needs *before* depot_tools/gclient can even run (`git`,
+  `python3`, `curl`, `ca-certificates`, `lsb-release`,
+  `build-essential`) - the Linux equivalent of `repos/lo`'s own
+  `install-llvm.cmd` (a standalone, runnable-by-anyone bootstrap step,
+  not something only CI happens to have preinstalled). Doesn't touch V8
+  itself - `v8/build/install-build-deps.sh` (part of the V8 checkout,
+  invoked by `build-linux-local.js` below) handles V8's own, much larger
+  dependency list.
+  ```
+  ./install-deps.sh
+  ```
+- **[`tools/build-linux-local.js`](tools/build-linux-local.js)** - Linux
+  only. Mirrors `build.yml`'s `build-linux-x64`/`build-linux-arm64` jobs
+  step-for-step, including arm64's real extra cost: Chromium only
+  publishes a prebuilt hermetic clang for x64 hosts, so arm64 bootstraps
+  its own clang from source first (`tools/clang/scripts/build.py`,
+  genuinely slow) - cached locally by `tools/clang/scripts/update.py`'s
+  hash, same idea as CI's own cache, skipped on a re-run against the same
+  checkout. Also builds `d8` and regenerates `compile_commands.json`,
+  same as `build-mac-local.js`. `--libcxx` is a placeholder, not yet
+  implemented - see PLAN.md task 38 in the outer sandbox repo (Linux
+  libc++ option, rescoped 2026-08-24, not yet built).
+  ```
+  ./install-deps.sh                              # once, if not already set up
+  node tools/build-linux-local.js x64             # or arm64, defaults to 15.2
+  node tools/build-linux-local.js arm64 15.2
+  ```
+- **[`tools/build-windows-local.js`](tools/build-windows-local.js)** -
+  Windows only. Mirrors `build.yml`'s `build-windows` job step-for-step,
+  including the real `BUILD.gn` source patches that job needs (`v8_monolith`
+  is a `static_library`, which Chromium's automatic libc++ dependency
+  injection never covers - without these, final link fails with dozens of
+  real `LNK2019`/`LNK2001`s for libc++ runtime symbols). Requires Visual
+  Studio 2026 (or compatible) with the "Desktop development with C++"
+  workload already installed - unlike Linux's `install-deps.sh`, nothing
+  here installs Visual Studio itself, too heavy/varied to script reliably.
+  **Unverified end to end** - written directly from `build.yml`'s real
+  steps, but there's no Windows machine anywhere this was tested against.
+  ```
+  node tools/build-windows-local.js x64
+  node tools/build-windows-local.js x64 15.2
+  ```
+- **[`docker/Dockerfile.ubuntu`](docker/Dockerfile.ubuntu)** - same glibc
+  environment as `install-deps.sh` plus Node itself, containerized (same
+  pattern as `repos/lo`'s own `docker/Dockerfile.ubuntu`: environment
+  only, no source `COPY`, mount the repo in and run
+  `build-linux-local.js` against it). Arch-agnostic - `docker run` on an
+  arm64 host (e.g. Docker Desktop on Apple Silicon) pulls the arm64
+  variant automatically, same image works for both `x64`/`arm64`.
+  ```
+  docker build -t v8-linux -f docker/Dockerfile.ubuntu .
+  docker run --rm -v "$(pwd):/src" -w /src v8-linux node tools/build-linux-local.js x64
+  docker run --rm -v "$(pwd):/src" -w /src v8-linux node tools/build-linux-local.js arm64
+  ```
+- **[`docker/Dockerfile.alpine`](docker/Dockerfile.alpine)** - musl
+  environment for building **V8 itself** under musl, for the first time
+  in this project (not to be confused with `repos/lo`'s own
+  `docker/Dockerfile.alpine`, which never compiles V8 - it links `lo.cc`
+  against a prebuilt *glibc* `libv8_monolith.a` via a C-symbol shim, see
+  `LO-MUSL.md`/`C++.md`). **Genuinely experimental, not a proven
+  recipe** - real, specific, unresolved risks are documented in the
+  Dockerfile itself: Chromium's hermetic `gn`/`ninja`/clang binaries are
+  almost certainly glibc-linked prebuilts and may not run under musl even
+  with `gcompat` installed; `v8/build/install-build-deps.sh` is
+  apt-based and skipped entirely on this image (`build-linux-local.js`
+  detects the missing `apt-get` and warns rather than crashing); V8's own
+  source has never been compiled against musl headers in this project at
+  all. Expect the first real run to fail at one of these three points -
+  that's the next real thing to fix, not a surprise.
+  ```
+  docker build -t v8-alpine -f docker/Dockerfile.alpine .
+  docker run --rm -v "$(pwd):/src" -w /src v8-alpine node tools/build-linux-local.js x64
+  ```
 
 ## planned
 

@@ -136,6 +136,30 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   never reached this file in the same run (they died earlier on the two
   patches above) — worth watching whether they hit this same error too
   once those are pushed; not yet confirmed either way.
+
+  **Regenerated again for 15.2** (2026-08-25): `tools/check-patches.js
+  15.2` caught this one failing to apply again — `error: patch failed:
+  include/v8-template.h:759`. Same shape of drift as the 14.9
+  regeneration above, confirmed the same way: `git apply --check -C1`
+  (reduced context) succeeded where the full-context check failed, and
+  fetching `branch-heads/15.2`'s real `include/v8-template.h` directly
+  showed the same 4 `ConvertSetter`/`ConvertDefiner` call sites still
+  doing the identical bare functional-style cast
+  (`return NamedPropertySetterCallbackV2(value);`, etc.) — upstream
+  still hasn't fixed the underlying cast-mismatch bug itself, just kept
+  shifting the surrounding lines (this time: a new
+  `ConvertSetter(NamedPropertySetterCallbackV2 value) { return value; }`
+  overload inserted just above the affected one, and the annotation
+  above each site changed from `V8_DEPRECATE_SOON` to `V8_DEPRECATED` -
+  a real, separate deprecation-tier bump, not something this patch needs
+  to care about). Regenerated the same way as before: applied the old
+  patch with reduced context against fresh 15.2 source to derive the
+  fixed file, diffed that against a pristine, independently re-fetched
+  copy of the same file to produce a new patch, and verified *that*
+  applies cleanly with full context against yet another fresh
+  `branch-heads/15.2` checkout (not just the same working copy already
+  used to derive it) before replacing the old file - confirmed via
+  `tools/check-patches.js 15.2` reporting both patches clean afterward.
 - **[`14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven`](14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven)**
   — **tried, disproven, parked** (2026-08-22) — renamed out of the
   `*.patch` glob like the obsolete ones above, but for a different
