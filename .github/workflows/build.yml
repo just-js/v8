@@ -12,7 +12,7 @@ defaults:
 jobs:
 
   build-linux-x64:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -308,6 +308,44 @@ jobs:
             echo "applying $p"
             git -C v8 apply "../$p"
           done
+      - name: patch clang build.py for gcc host bootstrap
+        run: |
+          cd ${{ github.workspace }}/v8
+          # tools/clang/scripts/build.py is Chromium tooling, fetched fresh
+          # by gclient sync above (not vendored/patchable via
+          # patches/*.patch, which only targets v8/ source) - unconditionally
+          # appends -fcrash-diagnostics-dir=<path> to both cflags/cxxflags
+          # right before invoking cmake to build the final compiler,
+          # confirmed directly against the real source
+          # (chromium.googlesource.com/chromium/src, main,
+          # tools/clang/scripts/build.py, main()) - no conditional on host
+          # compiler anywhere. That's a clang-only flag (crash-reproducer
+          # diagnostics dir) with no GCC equivalent at any version - checked
+          # empirically, not assumed: gcc 15.2 rejects it identically to
+          # gcc 11 ("unrecognized command-line option"). Breaks CMake's very
+          # first compiler-ABI-detection test compile the moment this job's
+          # forced GCC host bootstrap (--host-cc=gcc below - arm64 has no
+          # prebuilt clang from Google at all) reaches it. Not present as of
+          # whatever CLANG_REVISION was pinned through V8 15.1 (this job was
+          # green then, past this exact cmake step - see PLAN.md task 35's
+          # log); genuinely new in whatever Chromium tooling commit V8
+          # 15.2's DEPS now pins. Same class of "Chromium build tooling
+          # assumes a clang host compiler" break already hit 5 times in this
+          # exact job (git identity, gcc-13->gcc, tensorflow/MLGO, missing
+          # lld, blink_gc_plugin/dyn_cast - PLAN.md task 35) - same fix
+          # shape as those: strip the clang-only assumption rather than
+          # chase satisfying it with GCC. Only checked against Chromium's
+          # `main` branch, not the exact pinned revision gclient sync
+          # fetches here - fails loudly (grep -q before, verify-removed
+          # after) rather than silently no-op'ing, so a future CLANG_REVISION
+          # bump that changes this code's shape breaks visibly instead of
+          # quietly stopping to do anything.
+          grep -q -- '-fcrash-diagnostics-dir' tools/clang/scripts/build.py
+          sed -i '/-fcrash-diagnostics-dir/d' tools/clang/scripts/build.py
+          if grep -q -- '-fcrash-diagnostics-dir' tools/clang/scripts/build.py; then
+            echo "::error::-fcrash-diagnostics-dir still present after patch" >&2
+            exit 1
+          fi
       - name: install build deps
         env:
           CC: gcc
@@ -492,7 +530,7 @@ jobs:
           '
 
   build-mac:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
     name: mac
     runs-on: macos-15
     env:
@@ -632,7 +670,7 @@ jobs:
           cat smoketest-out.txt
 
   build-windows:
-#    if: ${{ false }}  # disable
+    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
     name: windows
     # Switched to windows-2025 (VS2026) 2026-08-22, matching repos/lo's
     # own Windows job. The previous windows-2022 pin's stated reason
