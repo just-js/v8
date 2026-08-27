@@ -31,16 +31,33 @@ v8_enable_backtrace = false
 # the full reasoning and the raw-archive size evidence (WASM 9.26MB/57
 # files, Maglev 10.16MB/27 files, TurboFan partial 8.44MB/26 files,
 # Sparkplug 0.27MB/3 files out of a 91.4MB total archive) that motivated
-# this. v8_enable_lite_mode cascades to disable sparkplug/maglev/turbofan
-# together (confirmed against real BUILD.gn source, ~line 4725-4745) -
-# Ignition (the bytecode interpreter) is the only tier left, so this is a
-# real perf tradeoff for any workload that runs long/hot enough to want
-# tiering, not just a free size win. use_thin_lto chosen over use_lto
-# ("fat" LTO) deliberately - repos/lo's own downstream link against this
-# archive should stay fast; see the joos-fire Cargo.toml lto="fat" precedent
-# in this repo's PLAN.md (commit 86e3e08, "makes every relink slow").
+# this. First pass used v8_enable_lite_mode=true (cuts sparkplug/maglev/
+# turbofan together, confirmed against real BUILD.gn ~line 4725-4745),
+# real confirmed archive: 103.6MB -> 35.5MB. Switched 2026-08-27 to
+# picking just one JIT tier back on instead of full jitless - real,
+# build-enforced constraint found first: BUILD.gn has
+# `assert(v8_enable_turbofan || !v8_enable_maglev, "Maglev is not
+# available when Turbofan is disabled.")` - Maglev cannot exist without
+# Turbofan, so "Maglev only" isn't actually an option; picking Maglev
+# means paying for Turbofan too (the two biggest tiers combined).
+# Sparkplug has no such coupling (gated purely on `!v8_jitless` in
+# gni/v8.gni) and is by far the smallest of the three (0.27MB vs
+# Maglev's 10.16MB) - the only tier that can genuinely stand alone.
+# v8_enable_lite_mode dropped entirely (not just set false) rather than
+# explicitly overridden - real, checked side effect if it were merely
+# flipped to false: `v8_enable_webassembly = !v8_enable_lite_mode` and
+# `v8_enable_turbofan = !v8_enable_lite_mode` are both real default
+# cascades in gni/v8.gni (verified against the real file, full text
+# searched, no other flag depends on lite_mode/jitless at the GN/build
+# level) - both explicitly re-pinned below regardless, so this doesn't
+# matter in practice, just noting it was checked, not assumed.
+# use_thin_lto stays off - real, confirmed failure last run (cross-LLVM-
+# version bitcode incompatibility, "Not an int attribute", see
+# V8-BUILD-OPTS.md §10), not revisited here.
 v8_enable_webassembly=false
-v8_enable_lite_mode=true
+v8_enable_turbofan=false
+v8_enable_maglev=false
+v8_enable_sparkplug=true
 use_thin_lto=false
 v8_advanced_bigint_algorithms=false
 # cppgc's own caged heap is a separate reservation from v8_enable_sandbox/
