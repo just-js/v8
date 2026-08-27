@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - main
+      # Temporary, additive - for the v8-minimal-linux-x64 experiment
+      # (V8-BUILD-OPTS.md §10 in the main repo, PLAN.md task 70) since
+      # gh isn't available here to trigger workflow_dispatch manually.
+      # Remove this line once that experiment's CI result has been seen.
+      - v8-minimal-linux-x64
+  workflow_dispatch:
 
 jobs:
   build:

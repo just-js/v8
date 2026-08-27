@@ -26,6 +26,23 @@ v8_monolithic=true
 v8_target_cpu="x64"
 v8_use_external_startup_data=false
 v8_enable_backtrace = false
+# Minimal-size experiment, linux/x64 only (2026-08-27, branch
+# v8-minimal-linux-x64) - see V8-BUILD-OPTS.md §9/§10 in the main repo for
+# the full reasoning and the raw-archive size evidence (WASM 9.26MB/57
+# files, Maglev 10.16MB/27 files, TurboFan partial 8.44MB/26 files,
+# Sparkplug 0.27MB/3 files out of a 91.4MB total archive) that motivated
+# this. v8_enable_lite_mode cascades to disable sparkplug/maglev/turbofan
+# together (confirmed against real BUILD.gn source, ~line 4725-4745) -
+# Ignition (the bytecode interpreter) is the only tier left, so this is a
+# real perf tradeoff for any workload that runs long/hot enough to want
+# tiering, not just a free size win. use_thin_lto chosen over use_lto
+# ("fat" LTO) deliberately - repos/lo's own downstream link against this
+# archive should stay fast; see the joos-fire Cargo.toml lto="fat" precedent
+# in this repo's PLAN.md (commit 86e3e08, "makes every relink slow").
+v8_enable_webassembly=false
+v8_enable_lite_mode=true
+use_thin_lto=true
+v8_advanced_bigint_algorithms=false
 # cppgc's own caged heap is a separate reservation from v8_enable_sandbox/
 # v8_enable_pointer_compression above (both already off) - it defaults on
 # for every 64bit arch regardless, and with pointer compression + the
