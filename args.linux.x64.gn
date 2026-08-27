@@ -41,7 +41,7 @@ v8_enable_backtrace = false
 # in this repo's PLAN.md (commit 86e3e08, "makes every relink slow").
 v8_enable_webassembly=false
 v8_enable_lite_mode=true
-use_thin_lto=true
+use_thin_lto=false
 v8_advanced_bigint_algorithms=false
 # cppgc's own caged heap is a separate reservation from v8_enable_sandbox/
 # v8_enable_pointer_compression above (both already off) - it defaults on
