@@ -12,7 +12,7 @@ defaults:
 jobs:
 
   build-linux-x64:
-    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
+#    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
     name: linux
     runs-on: ubuntu-22.04
     strategy:
@@ -530,7 +530,7 @@ jobs:
           '
 
   build-mac:
-    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
+#    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
     name: mac
     runs-on: macos-15
     env:
@@ -670,7 +670,7 @@ jobs:
           cat smoketest-out.txt
 
   build-windows:
-    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
+#    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
     name: windows
     # Switched to windows-2025 (VS2026) 2026-08-22, matching repos/lo's
     # own Windows job. The previous windows-2022 pin's stated reason
