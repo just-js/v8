@@ -160,6 +160,33 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   `branch-heads/15.2` checkout (not just the same working copy already
   used to derive it) before replacing the old file - confirmed via
   `tools/check-patches.js 15.2` reporting both patches clean afterward.
+
+  **Retired as obsolete at 15.3** (2026-08-28,
+  [`14.8-template-h-cast-function-type-mismatch.patch.obsolete-at-15.3`](14.8-template-h-cast-function-type-mismatch.patch.obsolete-at-15.3)):
+  `tools/check-patches.js 15.3` failed this one again, but this time it's
+  not another context shift - `git apply --check -C1` (reduced context)
+  also fails, the first time that mechanical pre-filter has flagged one
+  of these as "not just moved" rather than confirming a drift. Fetched
+  `branch-heads/15.3`'s real `include/v8-template.h` directly and
+  confirmed why: the `ConvertSetter`/`ConvertDefiner` static helpers this
+  patch has been chasing across 14.9 and 15.2 are gone entirely - zero
+  matches for `Convert` anywhere in the file - and every
+  `NamedPropertyHandlerConfiguration`/`IndexedPropertyHandlerConfiguration`
+  constructor now takes the V2-typed callback directly, no old-signature
+  overload left to convert into. This is exactly the cleanup the file's
+  own `TODO(crbug.com/348660658): cleanup once migration ... is done`
+  comment (quoted above, present since 14.8) said would eventually
+  happen - upstream finished the V1->V2 migration and deleted the buggy
+  cast rather than fixing it in place, unlike the 14.9/15.2 bumps. Also
+  confirmed via `repos/lo` itself (grepped `lo.cc`/every `api.js`, not
+  assumed): `lo` has never called
+  `NamedPropertyHandlerConfiguration`/`IndexedPropertyHandlerConfiguration`/
+  `SetHandler` at all, so this was only ever a V8-own-build concern (the
+  original Windows `-Wcast-function-type-mismatch` failure above), never
+  an `lo`-embedder one - nothing on `lo`'s side to re-check now that the
+  API surface is gone. `tools/check-patches.js 15.3` reports clean
+  (1 active patch, `14.8-object-h-missing-nullptr-t.patch`, passes
+  unchanged) after retiring this one.
 - **[`14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven`](14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven)**
   — **tried, disproven, parked** (2026-08-22) — renamed out of the
   `*.patch` glob like the obsolete ones above, but for a different
