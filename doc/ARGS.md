@@ -68,28 +68,12 @@ emulator) — not a mode this repo uses.
 | `is_cfi` | *(unset)* | `false` | *(unset)* | Control Flow Integrity instrumentation (protects virtual calls/casts). Off by default anywhere; only set explicitly on mac. **Open question, not resolved here:** unclear from these files alone whether mac-only is deliberate or incidental — flagging rather than assuming. |
 | `is_asan` | *(unset)* | `false` | *(unset)* | AddressSanitizer instrumentation. Same mac-only-and-unexplained situation as `is_cfi` above. |
 
-## 4. Linux/x64-only: the minimal-size build variant
-
-Set only in `args.linux.x64.gn` — not (yet) mirrored to the other 5
-platforms. Full reasoning, the real archive-size evidence per component,
-and the `assert()`-enforced Maglev-requires-Turbofan constraint that
-shaped the final choice: [V8-BUILD-OPTS.md](V8-BUILD-OPTS.md).
-
-| Flag | Value | What it does | Alternative |
-|---|---|---|---|
-| `v8_enable_webassembly` | `false` | WebAssembly compiler + runtime + JS API. | `true` (real default) — real archive cost: 9.26MB/57 files. |
-| `v8_enable_turbofan` | `false` | V8's top-tier optimizing JIT. | `true` (real default) — 8.44MB/26 files; a real `BUILD.gn` `assert()` means Maglev can't exist without it. |
-| `v8_enable_maglev` | `false` | V8's mid-tier JIT, between Sparkplug and Turbofan. | `true` — 10.16MB/27 files, but requires Turbofan too (see above), so "Maglev only" isn't actually an option. |
-| `v8_enable_sparkplug` | `true` | V8's fast, non-optimizing baseline JIT — smallest tier (0.27MB/3 files) and the only one with no coupling to the others, so the only one kept on. | `false` → fully jitless. |
-| `use_thin_lto` | `false` | Cross-translation-unit link-time optimization via LLVM ThinLTO. | `true` — tried; hit a real cross-LLVM-version bitcode incompatibility (`"Not an int attribute"`) when linked against by a different LLVM version downstream, not yet revisited. |
-| `v8_advanced_bigint_algorithms` | `false` | Faster BigInt algorithms, at a real 10-30KB binary-size cost. | `true` (real default off-Android) — dropped as part of the same minimal-size push. |
-
 ## External links
 
-- [v8.dev/docs/build-gn](https://v8.dev/docs/build-gn) — V8's own GN build doc.
-- [v8.dev/docs/build](https://v8.dev/docs/build) — general V8 build overview.
-- [GN reference](https://gn.googlesource.com/gn/+/main/docs/reference.md) — the GN language/tool itself, not V8-specific.
-- [v8.dev/blog/sandbox](https://v8.dev/blog/sandbox) — the V8 heap sandbox (`v8_enable_sandbox`), why it exists and its threat model.
+- [`v8.dev/docs/build-gn`](https://v8.dev/docs/build-gn) — V8's own GN build doc.
+- [`v8.dev/docs/build`](https://v8.dev/docs/build) — general V8 build overview.
+- [`GN reference`](https://gn.googlesource.com/gn/+/main/docs/reference.md) — the GN language/tool itself, not V8-specific.
+- [`v8.dev/blog/sandbox`](https://v8.dev/blog/sandbox) — the V8 heap sandbox (`v8_enable_sandbox`), why it exists and its threat model.
 - [`chromium/chromium` GitHub mirror: `build/config/compiler/compiler.gni`](https://github.com/chromium/chromium/blob/main/build/config/compiler/compiler.gni) — real source for `symbol_level`, `strip_debug_info`, `treat_warnings_as_errors`, `use_thin_lto`.
 - [`chromium/chromium` GitHub mirror: `build/config/c++/c++.gni`](https://github.com/chromium/chromium/blob/main/build/config/c%2B%2B/c%2B%2B.gni) — `use_custom_libcxx`.
 - [`chromium/chromium` GitHub mirror: `build/config/sanitizers/sanitizers.gni`](https://github.com/chromium/chromium/blob/main/build/config/sanitizers/sanitizers.gni) — `is_asan`, `is_cfi`.

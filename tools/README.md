@@ -32,7 +32,7 @@ waiting on/consuming a GitHub Actions run.
   implemented - see PLAN.md task 38 in the outer sandbox repo (Linux
   libc++ option, rescoped 2026-08-24, not yet built).
   ```
-  ./install-deps.sh                              # once, if not already set up
+  ./tools/install-deps.sh                         # once, if not already set up
   node tools/build-linux-local.js x64             # or arm64, defaults to 15.2
   node tools/build-linux-local.js arm64 15.2
   ```
@@ -43,7 +43,7 @@ waiting on/consuming a GitHub Actions run.
   injection never covers - without these, final link fails with dozens of
   real `LNK2019`/`LNK2001`s for libc++ runtime symbols). Requires Visual
   Studio 2026 (or compatible) with the "Desktop development with C++"
-  workload already installed - unlike Linux's `install-deps.sh`, nothing
+  workload already installed - unlike Linux's `tools/install-deps.sh`, nothing
   here installs Visual Studio itself, too heavy/varied to script reliably.
   **Unverified end to end** - written directly from `build.yml`'s real
   steps, but there's no Windows machine anywhere this was tested against.
@@ -87,7 +87,7 @@ waiting on/consuming a GitHub Actions run.
   (`../docker/Dockerfile.ubuntu`/`.alpine`) and its windows job via
   `build.cmd`/PowerShell staging, different enough from the mac path to
   be their own follow-up.
-- **[`../install-deps.sh`](../install-deps.sh)** - Linux only, Debian/Ubuntu
+- **[`install-deps.sh`](install-deps.sh)** - Linux only, Debian/Ubuntu
   (`apt-get`-based). Installs the host-level prerequisites building V8
   locally needs *before* depot_tools/gclient can even run (`git`,
   `python3`, `curl`, `ca-certificates`, `lsb-release`,
@@ -98,7 +98,7 @@ waiting on/consuming a GitHub Actions run.
   invoked by `build-linux-local.js` below) handles V8's own, much larger
   dependency list.
   ```
-  ./install-deps.sh
+  ./tools/install-deps.sh
   ```
 
 

@@ -21,7 +21,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Same list as ../install-deps.sh (the bare-metal equivalent of this
+# Same list as ../tools/install-deps.sh (the bare-metal equivalent of this
 # image) plus Node itself, which install-deps.sh doesn't need to install
 # on a real dev machine but this container does, to run
 # tools/build-linux-local.js at all.

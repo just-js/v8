@@ -3,7 +3,8 @@
 A deeper look at the reasoning behind the less-obvious `v8_*`/`cppgc_*`
 GN args set in this repo's `args.*.gn` files, plus options that were
 considered and deliberately *not* applied, and the real measured results
-of the minimal-size build variant. Companion to
+of an experimental minimal-size build variant (pushed as its own branch,
+not merged to main — see below). Companion to
 [`ARGS.md`](ARGS.md) in this directory, which has the full flag-by-flag
 matrix across all 6 platforms — this doc goes deeper on the subset of
 flags where the "why" doesn't fit in a table cell.
@@ -132,9 +133,9 @@ tuned to one fixed, narrow workload — full jitless is a severe,
 workload-dependent perf cliff (pure Ignition bytecode interpretation, no
 tiering at all) that's a poor default for an unknown consumer. The
 per-platform `args.*.gn` pattern already supports a dedicated variant
-(see the minimal-size build below, which took a narrower cut instead —
-Sparkplug kept, only Maglev/TurboFan/WASM removed) rather than changing
-the default build's tradeoffs for everyone.
+(see the experimental minimal-size build below, which took a narrower
+cut instead — Sparkplug kept, only Maglev/TurboFan/WASM removed) rather
+than changing the default build's tradeoffs for everyone.
 
 ## `single_generation`/`disable_write_barriers` — a real gotcha for anyone tempted to set these at runtime
 
@@ -248,12 +249,21 @@ Linux, but *load-bearing* on macOS/Windows, whose real default is `2`
 also set on all 6, but per its own GN comment is Android-only — it does
 nothing on any platform this repo actually targets.
 
-## The minimal-size build variant (`args.linux.x64.gn`, linux/x64 only today)
+## The minimal-size build variant — experimental, not on main
 
-A genuinely smaller `libv8_monolith.a` for anyone building a much
-smaller runtime, published the same way this repo's CI already publishes
-the main release assets. Scoped to linux/x64 first before deciding
-whether it's worth mirroring to the other 5 platforms.
+**This is not part of the default build.** It lives on the
+[`v8-minimal-linux-x64`](https://github.com/just-js/v8/tree/v8-minimal-linux-x64)
+branch — pushed, CI-built, and real-world benchmarked (below), but not
+merged to `main` — so none of the flags in this section are set in the
+`args.*.gn` files this repo actually publishes releases from. Included
+here because the results are real and worth having on record for anyone
+considering the same tradeoff, not because it ships today.
+
+The goal, on that branch: a genuinely smaller `libv8_monolith.a` for
+anyone building a much smaller runtime, published the same way this
+repo's CI already publishes the main release assets, if it's ever
+merged. Scoped to linux/x64 first before deciding whether it's worth
+mirroring to the other 5 platforms.
 
 **What's cut, and why:**
 

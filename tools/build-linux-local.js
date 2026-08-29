@@ -72,7 +72,7 @@ if (useLibcxx) {
 for (const bin of ['git', 'python3', 'curl', 'gcc']) {
   if (spawnSync('which', [bin]).status !== 0) {
     console.error(`missing prerequisite: ${bin}`)
-    console.error('run ./install-deps.sh first (repos/v8 root)')
+    console.error('run ./tools/install-deps.sh first (repos/v8 root)')
     process.exit(1)
   }
 }
