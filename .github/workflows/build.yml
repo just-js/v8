@@ -819,6 +819,63 @@ jobs:
             echo "applying $p"
             git -C v8 apply "../$p"
           done
+      - name: patch build/config/win NTDDI_VERSION for installed Windows SDK
+        run: |
+          # Real CI failure (just-js/v8 run 33226791928, windows x64, V8
+          # 15.3), different from the SDK_VERSION fix above (that one's
+          # confirmed working - this build now gets past `gn gen` and
+          # into real compilation before failing here). build/config/win/
+          # BUILD.gn (fetched fresh by `gclient sync` above, from the
+          # revision V8 15.3's own DEPS pins for `build` - not something
+          # patches/*.patch can target, same reasoning as the libc++
+          # patches below) sets `-DNTDDI_VERSION=NTDDI_WIN11_BR`, a
+          # Windows-SDK-release identifier newer than what SDK 10.0.26100.0
+          # (the version actually installed on this runner - see
+          # setup_toolchain.py's SDK_VERSION, same patch file as above)
+          # defines in its own sdkddkver.h. An undefined macro used in an
+          # `#if NTDDI_VERSION >= ...` comparison evaluates to 0 rather
+          # than erroring, so every NTDDI_VERSION-gated declaration in the
+          # Windows SDK headers silently disappears - confirmed real
+          # symptom: `fileapi.h(1081,10): error: unknown type name
+          # 'FILE_INFO_BY_HANDLE_CLASS'` while compiling src/base/cpu/
+          # cpu.cc, nothing to do with cpu.cc itself.
+          #
+          # Chromium's own history backs this up: a 2026-08-29 fetch of
+          # chromium/src/build's *current* upstream build/config/win/
+          # BUILD.gn sets NTDDI_VERSION=NTDDI_WIN10_VB, an older/safer
+          # baseline - not WIN11_BR or even WIN11_GE - strong signal
+          # upstream walked this back after hitting the same class of
+          # SDK-header incompatibility. A separate Chromium tracker search
+          # found the intermediate step: NTDDI_WIN11_GE was chosen
+          # specifically because it "requires Windows 10.0.26100.0 SDK or
+          # higher" - i.e. 26100.0 was GE's own floor, and WIN11_BR (what
+          # V8 15.3's pinned `build` revision actually uses) is a step
+          # beyond that, needing an SDK newer than what's installed here.
+          # Independent reports (CPython/LLVM issue trackers) confirm
+          # "unknown type name" clang-cl breakage tied to SDK 10.0.26100.0
+          # header/macro mismatches generally - a known class of problem,
+          # not unique to this setup. References:
+          # https://chromium.googlesource.com/chromium/src/build/+/refs/heads/master/config/win/BUILD.gn
+          # https://issues.chromium.org/issues/41438438
+          #
+          # Fix: match current upstream's own already-reverted choice
+          # (NTDDI_WIN10_VB) rather than gamble on NTDDI_WIN11_GE being
+          # clean at exactly this SDK point-release - conservative, not
+          # verified against a full local Windows build (no Windows
+          # toolchain in the sandbox this was diagnosed from), so this is
+          # the first real CI signal on whether it's sufficient.
+          node -e "
+            const fs = require('fs');
+            const path = 'build/config/win/BUILD.gn';
+            let content = fs.readFileSync(path, 'utf8');
+            const re = /NTDDI_VERSION=NTDDI_WIN11_BR/;
+            const m = content.match(re);
+            if (!m) { console.error('NTDDI_VERSION PATCH TARGET NOT FOUND - build/config/win/BUILD.gn winver config has changed shape, aborting'); process.exit(1); }
+            content = content.replace(re, 'NTDDI_VERSION=NTDDI_WIN10_VB');
+            fs.writeFileSync(path, content);
+            console.log('patched NTDDI_VERSION from NTDDI_WIN11_BR (needs a newer SDK than 10.0.26100.0 provides) to NTDDI_WIN10_VB (matches current chromium/src/build upstream)');
+          "
+        working-directory: v8
       - name: patch v8_monolith to depend on libc++ explicitly
         run: |
           # v8_monolith is a `static_library`, and Chromium's automatic
