@@ -1,0 +1,15 @@
+--- a/build/toolchain/win/setup_toolchain.py
++++ b/build/toolchain/win/setup_toolchain.py
+@@ -22,6 +22,11 @@
+ import gn_helpers
+ 
+ SCRIPT_DIR = os.path.dirname(__file__)
+-SDK_VERSION = '10.0.28000.0'
++# Real, confirmed CI failure (just-js/v8 run 33136871070, windows x64,
++# V8 15.3): chromium's own hardcoded '10.0.28000.0' isn't actually staged
++# on GitHub's windows-2025 runner label's current image (win25-vs2026,
++# release 20260818.207) - confirmed via that image's own published
++# software manifest, which lists 10.0.26100.0 as the installed SDK.
++SDK_VERSION = '10.0.26100.0'
+ MSVC_DIR = re.compile('^.*/VC/Tools/MSVC/[^/]+/include$')
+ WINDOWS_KITS_DIR = re.compile(r'^(.*/Windows Kits/\d+/Include/[^/]+)/.*')
