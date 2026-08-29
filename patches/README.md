@@ -1,4 +1,4 @@
-# `patches/`
+# patches
 
 Small, real patches against V8's own source, applied automatically to
 every platform build job right after the checkout is cached (`.github/
@@ -27,28 +27,8 @@ applied. Simplest possible revert: `git rm patches/<name>.patch`.
 the right `a/`/`b/` format). Test it actually applies before committing:
 `git -C v8 apply --check patches/<name>.patch`.
 
-## Current patches
+## current
 
-- **[`14.7-bigint-missing-memory-include.patch.obsolete-at-14.9`](14.7-bigint-missing-memory-include.patch.obsolete-at-14.9)**
-  — **obsolete, renamed out of the `*.patch` glob so it's no longer
-  applied, kept for reference/history rather than deleted.**
-  `src/bigint/bigint.h` at `branch-heads/14.7` was missing
-  `#include <memory>` (uses `std::unique_ptr`/`std::make_unique_for_overwrite`
-  without it) — real, confirmed build failure
-  (`error: no template named 'unique_ptr' in namespace 'std'`), not
-  guessed: diffed directly against V8 mainline, where the include exists
-  (landed sometime after the 14.7 branch cut, not yet backported to that
-  branch at the time). See `V8.md`'s 14.7 notes for the full story.
-  Confirmed still needed at 14.8 (applied cleanly there). **The
-  parking-lot note written for this patch called it exactly**: bumping
-  to 14.9 (2026-08-22) broke it — real CI failure, all 5 platforms,
-  `error: patch failed: src/bigint/bigint.h:10` / `patch does not
-  apply` — and fetching `branch-heads/14.9`'s real `bigint.h` directly
-  confirmed why: upstream added `#include <memory>` itself somewhere
-  between 14.7 and 14.9, so the fix this patch was applying now already
-  exists in V8's own source. Not a broken patch, a superseded one.
-  Renamed rather than deleted so the history/reasoning stays discoverable
-  if a much later V8 version ever regresses the same include again.
 - **[`14.8-object-h-missing-nullptr-t.patch`](14.8-object-h-missing-nullptr-t.patch)**
   — `include/v8-object.h` at `branch-heads/14.8` uses a bare `nullptr_t`
   (`AccessorNameGetterCallback getter, nullptr_t setter = nullptr` at
@@ -69,25 +49,6 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   fix compiles in isolation (a standalone `using std::nullptr_t;`
   translation unit) before trusting it; not yet confirmed against a
   real CI run.
-- **[`14.8-wasm-shuffle-reducer-value-or-braces.patch.obsolete-at-14.9`](14.8-wasm-shuffle-reducer-value-or-braces.patch.obsolete-at-14.9)**
-  — **obsolete, renamed out of the `*.patch` glob, kept for reference.**
-  `src/compiler/turboshaft/wasm-shuffle-reducer.cc:576` at
-  `branch-heads/14.8` called `max.value_or({})` on a
-  `std::optional<uint8_t>` — real, confirmed build failure on
-  `mac (arm64)`'s real CI toolchain (Xcode 16.4 / macOS 15.5 SDK's
-  libc++, so not specific to this project's own clang+libc++ setup
-  either): `error: no matching member function for call to 'value_or'`,
-  because `value_or(_Up&& __v)`'s forwarding-reference template
-  parameter `_Up` can't be deduced from a bare `{}`. Fix:
-  `max.value_or({})` → `max.value_or(0)`. **Confirmed still needed at
-  14.8** (real CI run). Broke again at 14.9 (2026-08-22, `tools/check-patches.js`
-  caught it locally before pushing — same run that found the bigint patch
-  above also obsolete, and the template-h regeneration below) — checked
-  the real `branch-heads/14.9` source directly: upstream independently
-  fixed the exact same deduction problem, just spelled
-  `max.value_or(uint8_t{0})` instead of our `max.value_or(0)`. Same
-  outcome as the bigint patch: superseded, not broken, retired rather
-  than regenerated.
 - **[`14.8-template-h-cast-function-type-mismatch.patch`](14.8-template-h-cast-function-type-mismatch.patch)**
   — **regenerated for 14.9** (2026-08-22): `tools/check-patches.js`
   caught this one failing to apply too, in the same 14.9 check that found
@@ -161,32 +122,50 @@ the right `a/`/`b/` format). Test it actually applies before committing:
   used to derive it) before replacing the old file - confirmed via
   `tools/check-patches.js 15.2` reporting both patches clean afterward.
 
-  **Retired as obsolete at 15.3** (2026-08-28,
-  [`14.8-template-h-cast-function-type-mismatch.patch.obsolete-at-15.3`](14.8-template-h-cast-function-type-mismatch.patch.obsolete-at-15.3)):
-  `tools/check-patches.js 15.3` failed this one again, but this time it's
-  not another context shift - `git apply --check -C1` (reduced context)
-  also fails, the first time that mechanical pre-filter has flagged one
-  of these as "not just moved" rather than confirming a drift. Fetched
-  `branch-heads/15.3`'s real `include/v8-template.h` directly and
-  confirmed why: the `ConvertSetter`/`ConvertDefiner` static helpers this
-  patch has been chasing across 14.9 and 15.2 are gone entirely - zero
-  matches for `Convert` anywhere in the file - and every
-  `NamedPropertyHandlerConfiguration`/`IndexedPropertyHandlerConfiguration`
-  constructor now takes the V2-typed callback directly, no old-signature
-  overload left to convert into. This is exactly the cleanup the file's
-  own `TODO(crbug.com/348660658): cleanup once migration ... is done`
-  comment (quoted above, present since 14.8) said would eventually
-  happen - upstream finished the V1->V2 migration and deleted the buggy
-  cast rather than fixing it in place, unlike the 14.9/15.2 bumps. Also
-  confirmed via `repos/lo` itself (grepped `lo.cc`/every `api.js`, not
-  assumed): `lo` has never called
-  `NamedPropertyHandlerConfiguration`/`IndexedPropertyHandlerConfiguration`/
-  `SetHandler` at all, so this was only ever a V8-own-build concern (the
-  original Windows `-Wcast-function-type-mismatch` failure above), never
-  an `lo`-embedder one - nothing on `lo`'s side to re-check now that the
-  API surface is gone. `tools/check-patches.js 15.3` reports clean
-  (1 active patch, `14.8-object-h-missing-nullptr-t.patch`, passes
-  unchanged) after retiring this one.
+## obsoleted
+
+- **[`14.7-bigint-missing-memory-include.patch.obsolete-at-14.9`](14.7-bigint-missing-memory-include.patch.obsolete-at-14.9)**
+  — **obsolete, renamed out of the `*.patch` glob so it's no longer
+  applied, kept for reference/history rather than deleted.**
+  `src/bigint/bigint.h` at `branch-heads/14.7` was missing
+  `#include <memory>` (uses `std::unique_ptr`/`std::make_unique_for_overwrite`
+  without it) — real, confirmed build failure
+  (`error: no template named 'unique_ptr' in namespace 'std'`), not
+  guessed: diffed directly against V8 mainline, where the include exists
+  (landed sometime after the 14.7 branch cut, not yet backported to that
+  branch at the time). See `V8.md`'s 14.7 notes for the full story.
+  Confirmed still needed at 14.8 (applied cleanly there). **The
+  parking-lot note written for this patch called it exactly**: bumping
+  to 14.9 (2026-08-22) broke it — real CI failure, all 5 platforms,
+  `error: patch failed: src/bigint/bigint.h:10` / `patch does not
+  apply` — and fetching `branch-heads/14.9`'s real `bigint.h` directly
+  confirmed why: upstream added `#include <memory>` itself somewhere
+  between 14.7 and 14.9, so the fix this patch was applying now already
+  exists in V8's own source. Not a broken patch, a superseded one.
+  Renamed rather than deleted so the history/reasoning stays discoverable
+  if a much later V8 version ever regresses the same include again.
+- **[`14.8-wasm-shuffle-reducer-value-or-braces.patch.obsolete-at-14.9`](14.8-wasm-shuffle-reducer-value-or-braces.patch.obsolete-at-14.9)**
+  — **obsolete, renamed out of the `*.patch` glob, kept for reference.**
+  `src/compiler/turboshaft/wasm-shuffle-reducer.cc:576` at
+  `branch-heads/14.8` called `max.value_or({})` on a
+  `std::optional<uint8_t>` — real, confirmed build failure on
+  `mac (arm64)`'s real CI toolchain (Xcode 16.4 / macOS 15.5 SDK's
+  libc++, so not specific to this project's own clang+libc++ setup
+  either): `error: no matching member function for call to 'value_or'`,
+  because `value_or(_Up&& __v)`'s forwarding-reference template
+  parameter `_Up` can't be deduced from a bare `{}`. Fix:
+  `max.value_or({})` → `max.value_or(0)`. **Confirmed still needed at
+  14.8** (real CI run). Broke again at 14.9 (2026-08-22, `tools/check-patches.js`
+  caught it locally before pushing — same run that found the bigint patch
+  above also obsolete, and the template-h regeneration below) — checked
+  the real `branch-heads/14.9` source directly: upstream independently
+  fixed the exact same deduction problem, just spelled
+  `max.value_or(uint8_t{0})` instead of our `max.value_or(0)`. Same
+  outcome as the bigint patch: superseded, not broken, retired rather
+  than regenerated.
+
+## disproven
+
 - **[`14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven`](14.9-disable-safe-libcxx-windows-torque-offset-fix.patch.disproven)**
   — **tried, disproven, parked** (2026-08-22) — renamed out of the
   `*.patch` glob like the obsolete ones above, but for a different
