@@ -1,0 +1,18 @@
+# Shared delta applied on top of each platform's own args.<platform>.gn to
+# produce the "mini" build variant - concatenated onto the base file at
+# build time (see build.yml), never committed as its own per-platform copy,
+# so the base args.*.gn files stay exactly what the default release build
+# ships. Real, measured results and the reasoning behind each flag here:
+# doc/V8-BUILD-OPTS.md's "minimal-size build variant" section.
+#
+# Every flag below is a pure addition - none collide with a key already
+# set in any of the 6 base args.*.gn files, so plain concatenation (base
+# file's lines, then these) is sufficient; no GN variable-reassignment
+# behavior is relied on here. If a future variant (e.g. debug) needs to
+# instead *override* an existing base key, verify GN's reassignment
+# semantics against a real `gn gen` run first - not yet done.
+v8_enable_webassembly=false
+v8_enable_turbofan=false
+v8_enable_maglev=false
+v8_enable_sparkplug=true
+v8_advanced_bigint_algorithms=false

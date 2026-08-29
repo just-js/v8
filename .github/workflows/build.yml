@@ -217,6 +217,106 @@ jobs:
             echo "lo (musl) smoke test passed:"
             cat smoketest-out.txt
           '
+      # "mini" build variant (PLAN.md task 73 in the outer sandbox repo) -
+      # same v8 checkout/patches as above, a second gn gen/ninja pass with
+      # args.mini.gni's deltas concatenated onto this platform's own base
+      # args file (see args.mini.gni's own comment, and
+      # doc/V8-BUILD-OPTS.md's "minimal-size build variant" section, for
+      # what's cut and why). continue-on-error on every step below,
+      # deliberately: this variant is proven on linux/x64 only so far - a
+      # mini failure here must never fail this job or block releasing the
+      # already-proven release artifact above.
+      - name: compile v8 (mini)
+        continue-on-error: true
+        run: |
+          cd ${{ github.workspace }}/v8
+          mkdir -p out.gn/linux.${{ matrix.platform }}.mini/
+          cat ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn ${{ github.workspace }}/args.mini.gni > out.gn/linux.${{ matrix.platform }}.mini/args.gn
+          gn gen out.gn/linux.${{ matrix.platform }}.mini
+          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.mini/
+          gn args --list out.gn/linux.${{ matrix.platform }}.mini
+          gzip -9 -c out.gn/linux.${{ matrix.platform }}.mini/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
+          tar -zcvf ../gen-linux-${{ matrix.platform }}-mini.tar.gz out.gn/linux.${{ matrix.platform }}.mini/gen
+      - name: Upload static library (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
+          name: libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
+          if-no-files-found: warn
+      - name: Upload generated source (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}-mini.tar.gz
+          name: gen-linux-${{ matrix.platform }}-mini.tar.gz
+          if-no-files-found: warn
+      # mini sanity test - reuses the same lo/ checkout and headers
+      # already staged above, just the mini libv8_monolith.a swapped in
+      # and rebuilt from clean (same double-build-in-one-job pattern the
+      # glibc/musl split above already uses).
+      - name: stage v8 (mini) for lo (sanity test)
+        continue-on-error: true
+        run: |
+          cp ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.mini/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      - name: build lo against v8 (mini) (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc sh -c "make clean && make ARCH=${{ matrix.platform }} lo"
+          if [ ! -f lo ]; then
+            echo "lo (mini) was not produced"
+            exit 1
+          fi
+      - name: run lo (mini) smoke test (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo (mini) eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo (mini) eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo (mini) smoke test passed:"
+            cat smoketest-out.txt
+          '
+      - name: build lo (musl) against v8 (mini) (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c "make clean && make ARCH=${{ matrix.platform }} lo"
+          if [ ! -f lo ]; then
+            echo "lo (musl, mini) was not produced"
+            exit 1
+          fi
+      - name: run lo (musl, mini) smoke test (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo (musl, mini) eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo (musl, mini) eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo (musl, mini) smoke test passed:"
+            cat smoketest-out.txt
+          '
 
   build-linux-arm64:
 #    if: ${{ false }}  # disable
@@ -528,6 +628,99 @@ jobs:
             echo "lo (musl) smoke test passed:"
             cat smoketest-out.txt
           '
+      # "mini" build variant (PLAN.md task 73 in the outer sandbox repo) -
+      # same rationale/mechanism as build-linux-x64's own "mini" block
+      # above, see its comments. continue-on-error everywhere below:
+      # this variant is proven on linux/x64 only so far, so a failure
+      # here must never fail this job or block releasing the
+      # already-proven release artifact above.
+      - name: compile v8 (mini)
+        continue-on-error: true
+        run: |
+          cd ${{ github.workspace }}/v8
+          mkdir -p out.gn/linux.${{ matrix.platform }}.mini/
+          cat ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn ${{ github.workspace }}/args.mini.gni > out.gn/linux.${{ matrix.platform }}.mini/args.gn
+          gn gen out.gn/linux.${{ matrix.platform }}.mini
+          ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.mini/
+          gn args --list out.gn/linux.${{ matrix.platform }}.mini
+          gzip -9 -c out.gn/linux.${{ matrix.platform }}.mini/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
+          tar -zcvf ../gen-linux-${{ matrix.platform }}-mini.tar.gz out.gn/linux.${{ matrix.platform }}.mini/gen
+      - name: Upload static library (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
+          name: libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
+          if-no-files-found: warn
+      - name: Upload generated source (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-linux-${{ matrix.platform }}-mini.tar.gz
+          name: gen-linux-${{ matrix.platform }}-mini.tar.gz
+          if-no-files-found: warn
+      - name: stage v8 (mini) for lo (sanity test)
+        continue-on-error: true
+        run: |
+          cp ${{ github.workspace }}/v8/out.gn/linux.${{ matrix.platform }}.mini/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      - name: build lo against v8 (mini) (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc sh -c "make clean && make ARCH=${{ matrix.platform }} lo"
+          if [ ! -f lo ]; then
+            echo "lo (mini) was not produced"
+            exit 1
+          fi
+      - name: run lo (mini) smoke test (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-glibc sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo (mini) eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo (mini) eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo (mini) smoke test passed:"
+            cat smoketest-out.txt
+          '
+      - name: build lo (musl) against v8 (mini) (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c "make clean && make ARCH=${{ matrix.platform }} lo"
+          if [ ! -f lo ]; then
+            echo "lo (musl, mini) was not produced"
+            exit 1
+          fi
+      - name: run lo (musl, mini) smoke test (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          docker run --rm -v "$(pwd):/src" -w /src lo-musl sh -c '
+            ./lo eval "console.log(\"hello\")" > smoketest-out.txt
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "lo (musl, mini) eval exited with a non-zero code"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            if ! grep -q hello smoketest-out.txt; then
+              echo "lo (musl, mini) eval ran but did not print the expected output"
+              cat smoketest-out.txt
+              exit 1
+            fi
+            echo "lo (musl, mini) smoke test passed:"
+            cat smoketest-out.txt
+          '
 
   build-mac:
 #    if: ${{ false }}  # disable - temporarily, to iterate on the linux-arm64 -fcrash-diagnostics-dir fix alone (V8-BUILD-OPTS.md/PLAN.md task 35 follow-up)
@@ -667,6 +860,68 @@ jobs:
             exit 1
           fi
           echo "lo smoke test passed:"
+          cat smoketest-out.txt
+      # "mini" build variant (PLAN.md task 73 in the outer sandbox repo) -
+      # same rationale/mechanism as build-linux-x64's own "mini" block,
+      # see its comments. continue-on-error everywhere below: this
+      # variant is proven on linux/x64 only so far, so a failure here
+      # must never fail this job or block releasing the already-proven
+      # release artifact above.
+      - name: compile v8 (mini)
+        continue-on-error: true
+        run: |
+          cd ${{ github.workspace }}/v8
+          mkdir -p out.gn/${{ matrix.platform }}.mini/
+          cat ${{ github.workspace }}/args.mac.${{ matrix.platform }}.gn ${{ github.workspace }}/args.mini.gni > out.gn/${{ matrix.platform }}.mini/args.gn
+          gn gen out.gn/${{ matrix.platform }}.mini
+          ninja v8_monolith -C out.gn/${{ matrix.platform }}.mini/
+          gn args --list out.gn/${{ matrix.platform }}.mini
+          gzip -9 -c out.gn/${{ matrix.platform }}.mini/obj/libv8_monolith.a > ../libv8_monolith-mac-${{ matrix.platform }}-mini.a.gz
+          tar -zcvf ../gen-mac-${{ matrix.platform }}-mini.tar.gz out.gn/${{ matrix.platform }}.mini/gen
+      - name: Upload static library (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-mac-${{ matrix.platform }}-mini.a.gz
+          name: libv8_monolith-mac-${{ matrix.platform }}-mini.a.gz
+          if-no-files-found: warn
+      - name: Upload generated source (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-mac-${{ matrix.platform }}-mini.tar.gz
+          name: gen-mac-${{ matrix.platform }}-mini.tar.gz
+          if-no-files-found: warn
+      - name: stage v8 (mini) for lo (sanity test)
+        continue-on-error: true
+        run: |
+          cp ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.mini/obj/libv8_monolith.a lo/v8/libv8_monolith.a
+      - name: build lo against v8 (mini) (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          make ARCH=${{ matrix.platform }} lo
+          if [ ! -f lo ]; then
+            echo "lo (mini) was not produced"
+            exit 1
+          fi
+      - name: run lo (mini) smoke test (sanity test)
+        continue-on-error: true
+        run: |
+          cd lo
+          ./lo eval "console.log('hello')" > smoketest-out.txt
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "lo (mini) eval exited with a non-zero code"
+            cat smoketest-out.txt
+            exit 1
+          fi
+          if ! grep -q hello smoketest-out.txt; then
+            echo "lo (mini) eval ran but did not print the expected output"
+            cat smoketest-out.txt
+            exit 1
+          fi
+          echo "lo (mini) smoke test passed:"
           cat smoketest-out.txt
 
   build-windows:
@@ -1082,4 +1337,84 @@ jobs:
             exit /b 1
           )
           echo lo.exe smoke test passed:
+          type smoketest-out.txt
+      # "mini" build variant (PLAN.md task 73 in the outer sandbox repo) -
+      # same rationale/mechanism as build-linux-x64's own "mini" block,
+      # see its comments. The two BUILD.gn source patches above (libc++
+      # dependency/visibility) are already applied in-place in this
+      # checkout, so this second gn gen/ninja pass picks them up for
+      # free - no need to reapply. continue-on-error everywhere below:
+      # this variant is proven on linux/x64 only so far, so a failure
+      # here must never fail this job or block releasing the
+      # already-proven release artifact above.
+      - name: compile v8 (mini)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          New-Item -ItemType directory -Path v8/out.gn/${{ matrix.platform }}.mini/
+          Get-Content "args.win.${{ matrix.platform }}.gn","args.mini.gni" | Set-Content "v8/out.gn/${{ matrix.platform }}.mini/args.gn"
+          Set-Location -Path v8
+          gn gen out.gn/${{ matrix.platform }}.mini
+          if ($LASTEXITCODE -ne 0) { Write-Error "gn gen (mini) failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
+          ninja v8_monolith -C out.gn/${{ matrix.platform }}.mini/
+          if ($LASTEXITCODE -ne 0) { Write-Error "ninja (mini) failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
+          gn args --list out.gn/${{ matrix.platform }}.mini
+          if ($LASTEXITCODE -ne 0) { Write-Error "gn args --list (mini) failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
+      - name: compress artifacts (mini)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.mini/obj/v8_monolith.lib -Destination ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}-mini.zip
+          Compress-Archive -Path ${{ github.workspace }}/v8/out.gn/${{ matrix.platform }}.mini/gen -Destination ${{ github.workspace }}/gen-win-${{ matrix.platform }}-mini.zip
+      - name: Upload static library (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/libv8_monolith-win-${{ matrix.platform }}-mini.zip
+          name: libv8_monolith-win-${{ matrix.platform }}-mini.zip
+          if-no-files-found: warn
+      - name: Upload generated source (mini)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ github.workspace }}/gen-win-${{ matrix.platform }}-mini.zip
+          name: gen-win-${{ matrix.platform }}-mini.zip
+          if-no-files-found: warn
+      # mini sanity test - reuses the lo/ checkout and staged libc++
+      # headers already in place above (unaffected by the mini flags:
+      # use_custom_libcxx doesn't change), just the mini v8_monolith.lib
+      # swapped in and rebuilt.
+      - name: stage v8 (mini) for lo (sanity test)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Copy-Item -Path v8/out.gn/${{ matrix.platform }}.mini/obj/v8_monolith.lib -Destination lo/v8/v8_monolith.lib -Force
+      - name: build lo against v8 (mini) (sanity test)
+        continue-on-error: true
+        shell: cmd
+        run: |
+          cd lo
+          call build.cmd
+          if not exist lo.exe (
+            echo lo.exe (mini) was not produced - build.cmd failed internally without propagating an error
+            exit /b 1
+          )
+      - name: run lo.exe (mini) smoke test (sanity test)
+        continue-on-error: true
+        shell: cmd
+        working-directory: lo
+        run: |
+          lo.exe eval "console.log('hello')" > smoketest-out.txt
+          if errorlevel 1 (
+            echo lo.exe (mini) eval exited with a non-zero code
+            type smoketest-out.txt
+            exit /b 1
+          )
+          findstr /C:"hello" smoketest-out.txt >nul
+          if errorlevel 1 (
+            echo lo.exe (mini) eval ran but did not print the expected output
+            type smoketest-out.txt
+            exit /b 1
+          )
+          echo lo.exe (mini) smoke test passed:
           type smoketest-out.txt

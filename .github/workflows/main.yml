@@ -42,6 +42,37 @@ jobs:
             content_type: application/zip
           - asset: libcxx-headers-win-x64.zip
             content_type: application/zip
+          # "mini" build variant (PLAN.md task 73 in the outer sandbox
+          # repo) - one entry per platform that actually has a CI job
+          # today (no win-arm64 job exists yet, same gap as the
+          # release-asset list above). No libcxx-headers-*-mini entry:
+          # use_custom_libcxx doesn't change for the mini variant, so
+          # the existing libcxx-headers-win-x64.zip above already covers
+          # it. build.yml's mini steps upload with if-no-files-found:
+          # warn (continue-on-error) - a platform where mini failed to
+          # build simply has no artifact for its matrix entry here,
+          # which fails only that one publish leg (fail-fast: false),
+          # never the others.
+          - asset: libv8_monolith-linux-x64-mini.a.gz
+            content_type: application/gzip
+          - asset: gen-linux-x64-mini.tar.gz
+            content_type: application/gzip
+          - asset: libv8_monolith-linux-arm64-mini.a.gz
+            content_type: application/gzip
+          - asset: gen-linux-arm64-mini.tar.gz
+            content_type: application/gzip
+          - asset: libv8_monolith-mac-x64-mini.a.gz
+            content_type: application/gzip
+          - asset: gen-mac-x64-mini.tar.gz
+            content_type: application/gzip
+          - asset: libv8_monolith-mac-arm64-mini.a.gz
+            content_type: application/gzip
+          - asset: gen-mac-arm64-mini.tar.gz
+            content_type: application/gzip
+          - asset: libv8_monolith-win-x64-mini.zip
+            content_type: application/zip
+          - asset: gen-win-x64-mini.zip
+            content_type: application/zip
     steps:
       - uses: actions/download-artifact@v4
         with:
