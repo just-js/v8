@@ -1,0 +1,118 @@
+--- a/include/v8-fast-api-calls.h
++++ b/include/v8-fast-api-calls.h
+@@ -308,6 +308,20 @@
+     kBigInt = 1,  // Use BigInts to represent 64 bit integers.
+   };
+ 
++  // Whether the C function takes a JS receiver as its first argument.
++  // Most fast-call C functions do (matching how V8 wires up
++  // FunctionTemplate callbacks). Embedders that want to register a plain
++  // C function pointer -- e.g. an FFI dispatcher that has no use for the
++  // receiver -- can set this to kNo. In that mode V8 omits the receiver
++  // from the C call: arg_info[0] is the first user argument,
++  // ArgumentCount() returns the user-arg count, and the JS receiver
++  // value is discarded by the lowering instead of being passed in the
++  // first parameter register.
++  enum class HasReceiver : uint8_t {
++    kYes = 0,
++    kNo = 1,
++  };
++
+   // Construct a struct to hold a CFunction's type information.
+   // |return_info| describes the function's return type.
+   // |arg_info| is an array of |arg_count| CTypeInfos describing the
+@@ -315,7 +329,8 @@
+   //   CTypeInfo::kCallbackOptionsType.
+   CFunctionInfo(const CTypeInfo& return_info, unsigned int arg_count,
+                 const CTypeInfo* arg_info,
+-                Int64Representation repr = Int64Representation::kNumber);
++                Int64Representation repr = Int64Representation::kNumber,
++                HasReceiver has_receiver = HasReceiver::kYes);
+ 
+   const CTypeInfo& ReturnInfo() const { return return_info_; }
+ 
+@@ -327,6 +342,9 @@
+ 
+   Int64Representation GetInt64Representation() const { return repr_; }
+ 
++  // See the HasReceiver comment above.
++  bool HasReceiverArg() const { return has_receiver_ == HasReceiver::kYes; }
++
+   // |index| must be less than ArgumentCount().
+   //  Note: if the last argument passed on construction of CFunctionInfo
+   //  has type CTypeInfo::kCallbackOptionsType, it is not included in
+@@ -342,6 +360,7 @@
+  private:
+   const CTypeInfo return_info_;
+   const Int64Representation repr_;
++  const HasReceiver has_receiver_;
+   const unsigned int arg_count_;
+   const CTypeInfo* arg_info_;
+ };
+--- a/src/api/api.cc
++++ b/src/api/api.cc
+@@ -12222,9 +12222,11 @@
+ 
+ CFunctionInfo::CFunctionInfo(const CTypeInfo& return_info,
+                              unsigned int arg_count, const CTypeInfo* arg_info,
+-                             Int64Representation repr)
++                             Int64Representation repr,
++                             HasReceiver has_receiver)
+     : return_info_(return_info),
+       repr_(repr),
++      has_receiver_(has_receiver),
+       arg_count_(arg_count),
+       arg_info_(arg_info) {
+   DCHECK(repr == Int64Representation::kNumber ||
+--- a/src/compiler/fast-api-calls.cc
++++ b/src/compiler/fast-api-calls.cc
+@@ -387,10 +387,13 @@
+       function_template_info.c_functions_with_signatures(broker);
+   const size_t overloads_count = overloads.size();
+ 
+-  // Only considers entries whose type list length matches arg_count.
++  // Only considers entries whose type list length matches arg_count. For
++  // signatures registered with HasReceiver::kNo, the C-side ArgumentCount
++  // already excludes the receiver, so don't subtract it again here.
+   for (size_t i = 0; i < overloads_count; i++) {
+     const CFunctionInfo* c_signature = overloads[i].signature;
+-    const size_t len = c_signature->ArgumentCount() - kReceiver;
++    const size_t len = c_signature->ArgumentCount() -
++                        (c_signature->HasReceiverArg() ? kReceiver : 0);
+     bool optimize_to_fast_call =
+         (len == arg_count) &&
+         fast_api_call::CanOptimizeFastSignature(c_signature);
+--- a/src/compiler/js-call-reducer.cc
++++ b/src/compiler/js-call-reducer.cc
+@@ -676,7 +676,14 @@
+     // arguments, so extract c_argument_count from the first function.
+     const int c_argument_count =
+         static_cast<int>(c_function_.signature->ArgumentCount());
+-    CHECK_GE(c_argument_count, kReceiver);
++    // HasReceiver::kNo signatures never included the receiver in
++    // ArgumentCount() in the first place, so there's nothing to check or
++    // subtract on that path -- see the HasReceiver comment in
++    // v8-fast-api-calls.h.
++    const bool has_receiver_arg = c_function_.signature->HasReceiverArg();
++    if (has_receiver_arg) {
++      CHECK_GE(c_argument_count, kReceiver);
++    }
+ 
+     const int slow_arg_count =
+         // Arguments for CallApiCallbackOptimizedXXX builtin including
+@@ -691,11 +698,13 @@
+     base::SmallVector<Node*, kInlineSize> inputs(value_input_count +
+                                                  kEffectAndControl);
+     int cursor = 0;
+-    inputs[cursor++] = receiver_;
++    if (has_receiver_arg) {
++      inputs[cursor++] = receiver_;
++    }
+ 
+     // TODO(turbofan): Consider refactoring CFunctionInfo to distinguish
+     // between receiver and arguments, simplifying this (and related) spots.
+-    int js_args_count = c_argument_count - kReceiver;
++    int js_args_count = c_argument_count - (has_receiver_arg ? kReceiver : 0);
+     for (int i = 0; i < js_args_count; ++i) {
+       if (i < n.ArgumentCount()) {
+         inputs[cursor++] = n.Argument(i);

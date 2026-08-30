@@ -29,6 +29,53 @@ the right `a/`/`b/` format). Test it actually applies before committing:
 
 ## current
 
+- **[`15.3-cfunctioninfo-has-receiver-kno.patch`](15.3-cfunctioninfo-has-receiver-kno.patch)**
+  — not a bug fix like the others here, a real feature addition: adds
+  `CFunctionInfo::HasReceiver` (`kYes`/`kNo`, defaulting to `kYes` —
+  fully backward compatible, no behavior change for any existing fast-
+  call user) so an embedder can register a plain C function pointer as a
+  V8 Fast API Call target without V8 forcing a wasted JS-receiver
+  parameter into it. Motivating case: `lo`'s own FFI/ABI dispatch calls
+  free-standing C functions with no "object" concept at all — the
+  receiver V8's Fast API Calls convention always prepends exists to
+  support Blink/DOM-style wrapped-object method dispatch (see the
+  worked example in `include/v8-fast-api-calls.h`'s own doc comment),
+  which was never `lo`'s shape. Confirmed this isn't a novel idea:
+  Node.js tried exactly this upstream
+  ([nodejs/node#63140](https://github.com/nodejs/node/pull/63140),
+  closed) before landing on a different approach for their own
+  `--experimental-ffi`
+  ([nodejs/node#63068](https://github.com/nodejs/node/pull/63068),
+  merged) — runtime-JIT'd trampolines that strip the receiver in
+  userland instead of patching V8. `lo` already has the equivalent
+  JIT-trampoline machinery (`lib/asm.js`'s `compile_fastcall`/
+  `compile_slowcall`, doing the identical register-shift-to-strip-
+  receiver trick) — this patch is the alternative bet: pay a small,
+  mechanical V8-side patch-maintenance cost instead of maintaining a
+  full runtime code generator for the common numeric/pointer-only case.
+  Adapted from #63140's real diff (touching `include/v8-fast-api-calls.h`,
+  `src/api/api.cc`, `src/compiler/fast-api-calls.cc`,
+  `src/compiler/js-call-reducer.cc`) — not copied verbatim, since #63140
+  was written against a different, unstated V8 version; hand-adapted
+  against this project's actual target (confirmed identical to
+  `branch-heads/15.2`'s real source in every region this patch touches,
+  fetched directly, not assumed) and verified with `git apply --check`
+  against a fresh `branch-heads/15.3` checkout before adding here, plus
+  `tools/check-patches.js 15.3` reporting it clean alongside the other
+  current patches.
+  **Not yet verified, real open questions**: (1) whether Maglev has its
+  own independent fast-API-call lowering that would also need this
+  change — this patch only touches `js-call-reducer.cc`, which is
+  Turbofan's; (2) `ReduceFastApiCall`'s slow-path fallback arithmetic
+  (`slow_arg_count`) was left unconditionally including a receiver slot,
+  on the reasoning that the slow builtin call (`CallApiCallbackOptimizedXXX`)
+  has its own separate calling convention unrelated to the fast
+  signature's shape — a judgment call, not confirmed against real V8
+  compiler behavior; (3) never compile-tested against a real V8 build —
+  this sandbox can't build V8 itself, so this is verified only as "a
+  clean, mechanical patch that applies to real source," not as "V8
+  compiles and runs correctly with it." Needs a real build (via
+  `tools/build-linux-local.js`/CI) before being trusted in production.
 - **[`14.8-object-h-missing-nullptr-t.patch`](14.8-object-h-missing-nullptr-t.patch)**
   — `include/v8-object.h` at `branch-heads/14.8` uses a bare `nullptr_t`
   (`AccessorNameGetterCallback getter, nullptr_t setter = nullptr` at
