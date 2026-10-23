@@ -486,9 +486,10 @@ jobs:
           # we control. Since we're pinned to a fixed release branch,
           # not a moving one, this should stay stable across our own
           # reruns. The trailing suffix is our own build.py flag set
-          # (--disable-asserts --no-tools) - bump it if those change,
-          # since that changes what ends up in the cached directory.
-          key: clang-arm64-${{ hashFiles('v8/tools/clang/scripts/update.py') }}-noasserts-notools-v1
+          # (--disable-asserts --no-tools --pic, plus the libclang
+          # bindings copied in below) - bump it if those change, since
+          # that changes what ends up in the cached directory.
+          key: clang-arm64-${{ hashFiles('v8/tools/clang/scripts/update.py') }}-noasserts-notools-pic-v1
       - name: build bootstrap clang
         if: steps.clang-cache.outputs.cache-hit != 'true'
         env:
@@ -521,12 +522,40 @@ jobs:
           # never hits this). Skipping the tools avoids the whole
           # question rather than chasing a GCC/ADL compatibility fix in
           # code we don't need.
-          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts --with-ml-inliner-model= --no-tools
+          #
+          # --pic: V8 15.5's metagen step (generates instance-types.h
+          # from the C++ headers) loads a native libclang.so through
+          # libclang's Python bindings. Google ships that prebuilt
+          # (DEPS third_party/llvm-libclang) for Linux x64, Mac and
+          # Windows only, so on arm64 we build it ourselves. LLVM only
+          # builds libclang as a shared library with LLVM_ENABLE_PIC
+          # (clang/tools/libclang/CMakeLists.txt), which build.py turns
+          # on only for --pic; without it we get libclang.a alone.
+          CMAKE_C_COMPILER=gcc CMAKE_CXX_COMPILER=g++ ./tools/clang/scripts/build.py --without-android --host-cc=gcc --host-cxx=g++ --without-fuchsia --use-system-cmake --disable-asserts --with-ml-inliner-model= --no-tools --pic
+          # The matching Python bindings, from the LLVM source build.py
+          # just checked out (third_party/llvm, same revision), copied
+          # into the cached directory so a cache hit has them too. This
+          # is where Chromium's own package step (tools/clang/scripts/
+          # package.py) takes them from.
+          mkdir -p third_party/llvm-build/Release+Asserts/bindings/python/clang
+          cp third_party/llvm/clang/bindings/python/clang/*.py third_party/llvm-build/Release+Asserts/bindings/python/clang/
+      - name: metagen libclang args
+        run: |
+          # Point metagen at the libclang.so and bindings built above,
+          # instead of the missing prebuilt package. Both args must be
+          # absolute paths (V8 BUILD.gn, v8_metagen_libclang_so), so
+          # they're generated here rather than kept in
+          # args.linux.arm64.gn.
+          llvm=${{ github.workspace }}/v8/third_party/llvm-build/Release+Asserts
+          ls -l $llvm/lib/libclang.so* $llvm/bindings/python/clang/cindex.py
+          echo "v8_metagen_libclang_so=\"$llvm/lib/libclang.so\"" > ${{ github.workspace }}/args.libclang.gni
+          echo "v8_metagen_libclang_bindings_dir=\"$llvm/bindings/python\"" >> ${{ github.workspace }}/args.libclang.gni
+          cat ${{ github.workspace }}/args.libclang.gni
       - name: build v8
         run: |
           cd ${{ github.workspace }}/v8
           mkdir -p out.gn/linux.${{ matrix.platform }}.release/
-          cp ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
+          cat ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn ${{ github.workspace }}/args.libclang.gni > $GITHUB_WORKSPACE/v8/out.gn/linux.${{ matrix.platform }}.release/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
@@ -639,7 +668,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}/v8
           mkdir -p out.gn/linux.${{ matrix.platform }}.mini/
-          cat ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn ${{ github.workspace }}/args.mini.gni > out.gn/linux.${{ matrix.platform }}.mini/args.gn
+          cat ${{ github.workspace }}/args.linux.${{ matrix.platform }}.gn ${{ github.workspace }}/args.mini.gni ${{ github.workspace }}/args.libclang.gni > out.gn/linux.${{ matrix.platform }}.mini/args.gn
           gn gen out.gn/linux.${{ matrix.platform }}.mini
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.mini/
           gn args --list out.gn/linux.${{ matrix.platform }}.mini
