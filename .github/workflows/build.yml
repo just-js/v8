@@ -3,7 +3,11 @@ on:
   workflow_call:
 
 env:
-  V8_VERSION: "15.5"
+  V8_VERSION: "15.6"
+  # the exact V8 commit to build: Chrome Stable's (or, before Stable, the
+  # Stable Cut's) V8 for this milestone, from chromiumdash fetch_releases.
+  # Must be on branch-heads/$V8_VERSION (checked before checkout).
+  V8_COMMIT: "392e44423f46d75904da712fadea4c7d5d97967f" # 15.6.75.19, Chrome 156.0.8078.47 Stable
 
 defaults:
   run:
@@ -57,20 +61,21 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: v8
-          key: v8-src-linux-x64-${{ env.V8_VERSION }}-v1
+          key: v8-src-linux-x64-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: fetch v8
         if: steps.v8-cache.outputs.cache-hit != 'true'
         run: |
           fetch v8
           cd v8
-          git checkout branch-heads/$V8_VERSION
+          git merge-base --is-ancestor $V8_COMMIT branch-heads/$V8_VERSION || { echo "V8_COMMIT $V8_COMMIT is not on branch-heads/$V8_VERSION"; exit 1; }
+          git checkout $V8_COMMIT
           gclient sync
       - name: save v8 checkout cache
         if: steps.v8-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: v8
-          key: v8-src-linux-x64-${{ env.V8_VERSION }}-v1
+          key: v8-src-linux-x64-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: apply v8 patches
         run: |
           for p in patches/*.patch; do
@@ -375,7 +380,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: v8
-          key: v8-src-linux-arm64-${{ env.V8_VERSION }}-v1
+          key: v8-src-linux-arm64-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: fetch v8
         if: steps.v8-cache.outputs.cache-hit != 'true'
         env:
@@ -393,14 +398,15 @@ jobs:
         run: |
           fetch v8
           cd v8
-          git checkout branch-heads/$V8_VERSION
+          git merge-base --is-ancestor $V8_COMMIT branch-heads/$V8_VERSION || { echo "V8_COMMIT $V8_COMMIT is not on branch-heads/$V8_VERSION"; exit 1; }
+          git checkout $V8_COMMIT
           gclient sync
       - name: save v8 checkout cache
         if: steps.v8-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: v8
-          key: v8-src-linux-arm64-${{ env.V8_VERSION }}-v1
+          key: v8-src-linux-arm64-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: apply v8 patches
         run: |
           for p in patches/*.patch; do
@@ -480,7 +486,7 @@ jobs:
           # already there, ninja v8_monolith just uses it.
           path: v8/third_party/llvm-build/Release+Asserts
           # tools/clang/scripts/update.py (checked out by gclient sync
-          # above, pinned by V8's own DEPS at branch-heads/$V8_VERSION)
+          # above, pinned by V8's own DEPS at $V8_COMMIT)
           # carries CLANG_REVISION/CLANG_SUB_REVISION - hashing it keys
           # the cache to the actual pinned LLVM commit, not to anything
           # we control. Since we're pinned to a fixed release branch,
@@ -803,20 +809,21 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: v8
-          key: v8-src-mac-${{ matrix.platform }}-${{ env.V8_VERSION }}-v1
+          key: v8-src-mac-${{ matrix.platform }}-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: fetch v8
         if: steps.v8-cache.outputs.cache-hit != 'true'
         run: |
           fetch v8
           cd v8
-          git checkout branch-heads/$V8_VERSION
+          git merge-base --is-ancestor $V8_COMMIT branch-heads/$V8_VERSION || { echo "V8_COMMIT $V8_COMMIT is not on branch-heads/$V8_VERSION"; exit 1; }
+          git checkout $V8_COMMIT
           gclient sync
       - name: save v8 checkout cache
         if: steps.v8-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: v8
-          key: v8-src-mac-${{ matrix.platform }}-${{ env.V8_VERSION }}-v1
+          key: v8-src-mac-${{ matrix.platform }}-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: apply v8 patches
         run: |
           for p in patches/*.patch; do
@@ -1057,7 +1064,8 @@ jobs:
       - name: init depot_tools
         run: |
           gclient
-      # branch-heads/$V8_VERSION is meant to be stable once cut (same
+      # Keyed on V8_COMMIT as well as V8_VERSION, so a new pin always
+      # fetches fresh. Originally: branch-heads/$V8_VERSION is meant to be stable once cut (same
       # trade-off already accepted for the linux-arm64 clang-bootstrap
       # cache) - this session alone has re-run this exact fetch+sync
       # something like 5-6 times against the same 14.5 pin while
@@ -1077,13 +1085,14 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: v8
-          key: v8-src-windows-${{ env.V8_VERSION }}-v1
+          key: v8-src-windows-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: prepared v8 build environment
         if: steps.v8-cache.outputs.cache-hit != 'true'
         run: |
           fetch v8
           cd v8
-          git checkout branch-heads/$V8_VERSION
+          git merge-base --is-ancestor $V8_COMMIT branch-heads/$V8_VERSION || { echo "V8_COMMIT $V8_COMMIT is not on branch-heads/$V8_VERSION"; exit 1; }
+          git checkout $V8_COMMIT
           gclient sync
       # explicit save right after sync succeeds, not deferred to
       # end-of-job - see the depot_tools cache comment above for why
@@ -1095,7 +1104,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: v8
-          key: v8-src-windows-${{ env.V8_VERSION }}-v1
+          key: v8-src-windows-${{ env.V8_VERSION }}-${{ env.V8_COMMIT }}-v1
       - name: apply v8 patches
         run: |
           for p in patches/*.patch; do

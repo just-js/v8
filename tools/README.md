@@ -99,9 +99,12 @@ API rate limit; public repos work without one.
   still applies cleanly against a target version's real source (fetched
   straight from `raw.githubusercontent.com/v8/v8`, no full V8 clone) -
   catches a patch going obsolete/context-drifted in seconds instead of a
-  full CI round-trip.
+  full CI round-trip. Files under a directory V8 pulls in through `DEPS`
+  (e.g. `build/`, for the Windows SDK patch) come from
+  chromium.googlesource.com at the revision `DEPS` pins for that version,
+  the same source CI's `gclient sync` checks out.
   ```
-  node tools/check-patches.js 15.2
+  node tools/check-patches.js 15.6
   ```
 - **[`build-verify.js`](build-verify.js)** - macOS only.
   Downloads a real `just-js/lo` checkout (default `main`, or pass a
