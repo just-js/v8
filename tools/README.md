@@ -52,6 +52,46 @@ waiting on/consuming a GitHub Actions run.
   node tools/build-windows-local.js x64 15.2
   ```
 
+## releases
+
+Node ESM scripts (no deps, Node 20+) for the release workflow
+(`doc/AGENTS.md`). A token in `$GH_TOKEN` or `$GITHUB_TOKEN` raises the
+API rate limit; public repos work without one.
+
+- **[`watch-run.js`](watch-run.js)** - watches one GitHub Actions run
+  until it finishes, printing a progress line per check, then each job's
+  result, duration and failed steps (`--json` for the same as JSON). Exit
+  0 = success, 1 = any other conclusion, 3 = still running (`--once`),
+  2 = usage or repeated API errors. The repo comes from the run URL, else
+  the `origin` remote, else `--repo`.
+  ```
+  node tools/watch-run.js https://github.com/just-js/v8/actions/runs/40015575661
+  node tools/watch-run.js 40015575661 --interval 300
+  node tools/watch-run.js 40009540053 --repo just-js/lo --once --json
+  ```
+- **[`bump.js`](bump.js)** - bumps `V8_VERSION` in
+  `.github/workflows/build.yml` and the release links in `README.md`,
+  commits only those two files as `chore: v8 <version>` and pushes `main`
+  (which starts the push build). Edits you've already made are fine if
+  they're exactly that bump; anything else in those files, anything
+  staged, or `main` not level with `origin/main` makes it refuse.
+  `--dry-run` checks and shows the diff without committing.
+  ```
+  node tools/bump.js --dry-run 15.6
+  node tools/bump.js 15.6
+  ```
+- **[`release.js`](release.js)** - tags a commit (default: `main`) as a
+  version and pushes the tag; `--release` also publishes the GitHub
+  release (`- V8 Release X` + changelog link), which starts `main.yml`.
+  Refuses unless the commit's `build.yml` builds that version. A re-run
+  with `--release` after a failed publish skips the tagging. Needs a token
+  with Contents: Read and write for `--release`. `--dry-run` prints the
+  tag and the release it would create.
+  ```
+  node tools/release.js --release --dry-run 15.6
+  node tools/release.js --release 15.6
+  ```
+
 ## miscellanous
 
 - **[`check-patches.js`](check-patches.js)** - before bumping
