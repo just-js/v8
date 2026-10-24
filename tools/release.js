@@ -118,6 +118,10 @@ const prev = git('tag', '--list').split('\n')
   .sort(compareVersions)
   .pop()
 let body = `- V8 Release ${version}`
+// the exact V8 the release is built from: build.yml's V8_COMMIT and its comment
+// ("15.6.75.19, Chrome 156.0.8078.47 Stable"), when the commit has one
+const pin = git('show', `${sha}:${YML}`).match(/^ *V8_COMMIT: *"([0-9a-f]{40})"(?: *# *(.*))?$/m)
+if (pin) body += `\n- V8 commit [${pin[1].slice(0, 12)}](https://github.com/v8/v8/commit/${pin[1]})${pin[2] ? ` (${pin[2].trim()})` : ''}`
 if (prev) body += `\n\n**Full Changelog**: https://github.com/${repo}/compare/${prev}...${version}`
 const payload = { tag_name: version, name: version, body, draft: false, prerelease: false }
 

@@ -69,20 +69,27 @@ API rate limit; public repos work without one.
   node tools/watch-run.js 40015575661 --interval 300
   node tools/watch-run.js 40009540053 --repo just-js/lo --once --json
   ```
-- **[`bump.js`](bump.js)** - bumps `V8_VERSION` in
-  `.github/workflows/build.yml` and the release links in `README.md`,
-  commits only those two files as `chore: v8 <version>` and pushes `main`
-  (which starts the push build). Edits you've already made are fine if
-  they're exactly that bump; anything else in those files, anything
-  staged, or `main` not level with `origin/main` makes it refuse.
-  `--dry-run` checks and shows the diff without committing.
+- **[`bump.js`](bump.js)** - pins the build to a V8 version and exact
+  commit: sets `V8_VERSION` and `V8_COMMIT` in `.github/workflows/build.yml`
+  (and the release links in `README.md` when the version changes), commits
+  only those two files as `chore: v8 <version> (<v8 version>)` and pushes
+  `main`, which starts the push build. The commit defaults to Chrome's newest
+  Stable release for that milestone (V8 x.y = milestone xy), or its newest
+  Beta before Stable, from chromiumdash; `--commit <sha>` overrides it. It
+  must be on `branch-heads/<version>`. The same version with another commit
+  is a re-pin (Beta/Stable Cut build to the Stable one). Edits you've already
+  made are fine if they're exactly that bump; anything else in those files,
+  anything staged, or `main` not level with `origin/main` makes it refuse.
+  `--dry-run` shows the diff and restores the working tree.
   ```
-  node tools/bump.js --dry-run 15.6
-  node tools/bump.js 15.6
+  node tools/bump.js --dry-run 15.7
+  node tools/bump.js 15.7
+  node tools/bump.js --commit <sha> 15.7    # re-pin
   ```
 - **[`release.js`](release.js)** - tags a commit (default: `main`) as a
   version and pushes the tag; `--release` also publishes the GitHub
-  release (`- V8 Release X` + changelog link), which starts `main.yml`.
+  release (`- V8 Release X`, the pinned `V8_COMMIT` with its comment, and
+  the changelog link), which starts `main.yml`.
   Refuses unless the commit's `build.yml` builds that version. A re-run
   with `--release` after a failed publish skips the tagging. Needs a token
   with Contents: Read and write for `--release`. `--dry-run` prints the
