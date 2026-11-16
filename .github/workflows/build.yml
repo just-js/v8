@@ -92,6 +92,7 @@ jobs:
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/linux.${{ matrix.platform }}.release
           tar -zcvf ../include.tar.gz include
           tar -zcvf ../src.tar.gz src
           gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
@@ -240,6 +241,7 @@ jobs:
           gn gen out.gn/linux.${{ matrix.platform }}.mini
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.mini/
           gn args --list out.gn/linux.${{ matrix.platform }}.mini
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/linux.${{ matrix.platform }}.mini
           gzip -9 -c out.gn/linux.${{ matrix.platform }}.mini/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
           tar -zcvf ../gen-linux-${{ matrix.platform }}-mini.tar.gz out.gn/linux.${{ matrix.platform }}.mini/gen
       - name: Upload static library (mini)
@@ -565,6 +567,7 @@ jobs:
           gn gen out.gn/linux.${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.release/
           gn args --list out.gn/linux.${{ matrix.platform }}.release
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/linux.${{ matrix.platform }}.release
           gzip -9 -c out.gn/linux.${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}.a.gz
           tar -zcvf ../gen-linux-${{ matrix.platform }}.tar.gz out.gn/linux.${{ matrix.platform }}.release/gen
       - name: Upload static library
@@ -678,6 +681,7 @@ jobs:
           gn gen out.gn/linux.${{ matrix.platform }}.mini
           ninja v8_monolith -C out.gn/linux.${{ matrix.platform }}.mini/
           gn args --list out.gn/linux.${{ matrix.platform }}.mini
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/linux.${{ matrix.platform }}.mini
           gzip -9 -c out.gn/linux.${{ matrix.platform }}.mini/obj/libv8_monolith.a > ../libv8_monolith-linux-${{ matrix.platform }}-mini.a.gz
           tar -zcvf ../gen-linux-${{ matrix.platform }}-mini.tar.gz out.gn/linux.${{ matrix.platform }}.mini/gen
       - name: Upload static library (mini)
@@ -839,6 +843,7 @@ jobs:
           gn gen out.gn/${{ matrix.platform }}.release
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.release/
           gn args --list out.gn/${{ matrix.platform }}.release
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/${{ matrix.platform }}.release
           gzip -9 -c out.gn/${{ matrix.platform }}.release/obj/libv8_monolith.a > ../libv8_monolith-mac-${{ matrix.platform }}.a.gz
           tar -zcvf ../gen-mac-${{ matrix.platform }}.tar.gz out.gn/${{ matrix.platform }}.release/gen
       - name: Upload static library
@@ -912,6 +917,7 @@ jobs:
           gn gen out.gn/${{ matrix.platform }}.mini
           ninja v8_monolith -C out.gn/${{ matrix.platform }}.mini/
           gn args --list out.gn/${{ matrix.platform }}.mini
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/${{ matrix.platform }}.mini
           gzip -9 -c out.gn/${{ matrix.platform }}.mini/obj/libv8_monolith.a > ../libv8_monolith-mac-${{ matrix.platform }}-mini.a.gz
           tar -zcvf ../gen-mac-${{ matrix.platform }}-mini.tar.gz out.gn/${{ matrix.platform }}.mini/gen
       - name: Upload static library (mini)
@@ -1259,6 +1265,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "ninja failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
           gn args --list out.gn/${{ matrix.platform }}.release
           if ($LASTEXITCODE -ne 0) { Write-Error "gn args --list failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/${{ matrix.platform }}.release
       - name: compress artifacts
         shell: pwsh
         run: |
@@ -1398,6 +1405,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Error "ninja (mini) failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
           gn args --list out.gn/${{ matrix.platform }}.mini
           if ($LASTEXITCODE -ne 0) { Write-Error "gn args --list (mini) failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
+          node ${{ github.workspace }}/tools/gen-build-info.js . out.gn/${{ matrix.platform }}.mini
       - name: compress artifacts (mini)
         continue-on-error: true
         shell: pwsh

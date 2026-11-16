@@ -98,6 +98,21 @@ API rate limit; public repos work without one.
   node tools/release.js --release --dry-run 15.6
   node tools/release.js --release 15.6
   ```
+- **[`gen-build-info.js`](gen-build-info.js)** - run by `build.yml` after
+  each `ninja v8_monolith`, before `gen/` is packed: writes
+  `<out>/gen/build-info/` so every `gen-*` release archive carries what's
+  needed to compile code against V8's **internal** headers and link it
+  against the released library without rebuilding V8: resolved GN args,
+  `compile_commands.json` (exact defines/flags per file), the
+  `v8_base_without_compiler` target's defines and include dirs, the
+  compiler version, and a copy of every third-party header the build used
+  (`root/`, from `ninja -t deps`). Its own `README.md` explains the layout.
+  It doesn't make Torque/CSA builtins changeable: those are compiled by
+  `mksnapshot` during the build. Never fails the build (errors go into
+  `info.json`). Not yet run end to end (needs a CI build).
+  ```
+  node tools/gen-build-info.js v8 out.gn/linux.x64.release
+  ```
 
 ## miscellanous
 
